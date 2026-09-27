@@ -1,7 +1,8 @@
 /* Glas-Design: durchscheinende Flächen über einem farbigen Hintergrund. Farben in index.html. */
 *,*::before,*::after{box-sizing:border-box}
 :root{box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
-html{height:100%;scroll-padding-top:env(safe-area-inset-top,0px);-webkit-text-size-adjust:100%}
+html{height:100%;scroll-padding-top:env(safe-area-inset-top,0px);-webkit-text-size-adjust:100%;touch-action:manipulation}
+input,select,textarea{font-size:16px!important}
 body{margin:0;min-height:100%;color:var(--ink);font-family:var(--ui);font-size:16px;line-height:1.5;background:var(--bg);-webkit-font-smoothing:antialiased}
 body::before{content:"";position:fixed;inset:-20%;z-index:-1;pointer-events:none;
   background:radial-gradient(40% 35% at 15% 20%,var(--orb1),transparent 70%),radial-gradient(45% 40% at 90% 75%,var(--orb2),transparent 70%),radial-gradient(35% 30% at 85% 10%,var(--orb3),transparent 70%);
