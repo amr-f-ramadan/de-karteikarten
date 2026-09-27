@@ -1,0 +1,9 @@
+{
+  "name": "DE: Karteikarten",
+  "short_name": "DE: Karteikarten",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#0C0F1D",
+  "theme_color": "#0C0F1D"
+}
