@@ -19,6 +19,7 @@
     remDenied: "Mitteilungen sind blockiert. In den iPhone-Einstellungen unter Mitteilungen für diese App erlauben.", remNeedTok: "Für Erinnerungen wird der GitHub-Token gebraucht.",
     delCard: "Karte löschen", delQ: "„{w}“ wirklich aus der Liste löschen?", deleted: "Gelöscht", delFail: "Löschen hat nicht geklappt",
     queued: "Gemini antwortet gerade nicht. Das Wort steht auf der Warteliste und wird automatisch erstellt, sobald es wieder geht.",
+    famH: "Wortfamilie", f_fam: "Wortfamilie (Stammwort)",
     waitH: "Warteliste", waitRm: "Von der Warteliste nehmen", autoAdded: "Neue Karte aus der Warteliste: {w}",
     remDone: "Erinnerung gespeichert", remFail: "Erinnerung konnte nicht gespeichert werden", remTestBody: "So sieht die Erinnerung aus."
   };
@@ -230,6 +231,9 @@
   let gkey = ""; try { gkey = localStorage.getItem(GK) || ""; } catch (e) {}
   let add = { word: "", busy: false, card: null, msg: "" };
   const MODELS = ["gemini-flash-lite-latest", "gemini-flash-latest", "gemini-2.5-flash-lite", "gemini-2.5-flash"];
+  const famKey = c => c.fam || c.w.toLowerCase();
+  const relatives = c => CARDS.filter(x => x !== c && famKey(x) === famKey(c));
+  const famList = () => [...new Set(CARDS.map(famKey))].join(", ");
   const PROMPT = w => `Du erstellst eine Lernkarte für einen arabischen Muttersprachler (Deutsch B1 bis B2).
 Wort oder Ausdruck: "${w}"
 Regeln:
@@ -241,11 +245,14 @@ Regeln:
 - def: einfache deutsche Erklärung in einem Satz, B1-Niveau.
 - ex: ein natürlicher Beispielsatz aus dem Alltag oder Beruf, B1-Niveau; das Zielwort in <b>…</b>.
 - note: nur wenn es eine typische Falle gibt (Verwechslung, Kasus, falscher Freund), sonst leer.
+- fam: das Stammwort der Wortfamilie, klein geschrieben, meist der Infinitiv des Verbs, sonst das Grundwort (z. B. "empfinden" für empfindlich, Empfindung und empfinden).
+  Schon vorhandene Wortfamilien: ${famList()}.
+  Wenn das Wort wirklich zu einer davon gehört (gleicher Wortstamm, nicht nur gleiche Vorsilbe), nimm genau diesen Wert. Sonst ein neues Stammwort.
 Keine Bindestriche als Gedankenstrich verwenden.`;
   const SCHEMA = { type: "OBJECT", properties: {
     w: { type: "STRING" }, g: { type: "STRING", enum: ["der", "die", "das", "pl", "x"] }, hint: { type: "STRING" },
-    perf: { type: "STRING" }, ar: { type: "STRING" }, def: { type: "STRING" }, ex: { type: "STRING" }, note: { type: "STRING" } },
-    required: ["w", "g", "hint", "ar", "def", "ex"] };
+    perf: { type: "STRING" }, ar: { type: "STRING" }, def: { type: "STRING" }, ex: { type: "STRING" }, note: { type: "STRING" }, fam: { type: "STRING" } },
+    required: ["w", "g", "hint", "ar", "def", "ex", "fam"] };
   async function genCard(word) {
     let last = "";
     for (const m of MODELS) {
@@ -280,6 +287,8 @@ Keine Bindestriche als Gedankenstrich verwenden.`;
       card.id = id;
       const o = { id, g: card.g, w: card.w, cat: T("newCat"), hint: card.hint || "", ar: card.ar, def: card.def || "", ex: card.ex };
       if (card.perf) o.perf = card.perf; if (card.note) o.note = card.note; if (card.src) o.src = card.src;
+      if (card.fam && card.fam.trim().toLowerCase() !== o.w.toLowerCase()) o.fam = card.fam.trim().toLowerCase();
+      else if (card.fam) { const k = card.fam.trim().toLowerCase(); if (CARDS.some(x => famKey(x) === k)) o.fam = k; }
       const i = src.lastIndexOf("\n];");
       if (i < 0) throw new Error("format");
       const out = src.slice(0, i) + ",\n " + JSON.stringify(o) + src.slice(i);
@@ -325,7 +334,7 @@ Keine Bindestriche als Gedankenstrich verwenden.`;
   }
   function readForm() {
     const v = id => { const el = $("#" + id); return el ? el.value.trim() : ""; };
-    return { w: v("f_w"), g: v("f_g") || "x", hint: v("f_hint"), perf: v("f_perf"), ar: v("f_ar"), def: v("f_def"), ex: v("f_ex"), note: v("f_note") };
+    return { w: v("f_w"), g: v("f_g") || "x", hint: v("f_hint"), perf: v("f_perf"), ar: v("f_ar"), def: v("f_def"), ex: v("f_ex"), note: v("f_note"), fam: v("f_fam") };
   }
   async function doGen() {
     const el = $("#nw"); if (el) add.word = el.value.trim();
@@ -412,7 +421,7 @@ Keine Bindestriche als Gedankenstrich verwenden.`;
       <button class="btn ok" data-act="gen" ${add.busy ? "disabled" : ""}>${add.busy === "gen" ? T("genBusy") : T("gen")}</button></div>
       ${add.msg ? `<p class="addmsg">${esc(add.msg)}</p>` : ""}
       ${renderWait()}
-      ${c ? `<div class="preview">${f("f_w", c.w)}${sel}${f("f_hint", c.hint)}${f("f_perf", c.perf)}${f("f_ar", c.ar)}${f("f_def", c.def, 1)}${f("f_ex", c.ex, 1)}${f("f_note", c.note, 1)}
+      ${c ? `<div class="preview">${f("f_w", c.w)}${sel}${f("f_hint", c.hint)}${f("f_perf", c.perf)}${f("f_ar", c.ar)}${f("f_def", c.def, 1)}${f("f_ex", c.ex, 1)}${f("f_note", c.note, 1)}${f("f_fam", c.fam)}
         <div class="row2"><button class="btn" data-act="discard">${T("discard")}</button><button class="btn" data-act="gen">${T("regen")}</button></div>
         <button class="btn ok wide" data-act="savecard" ${add.busy ? "disabled" : ""}>${add.busy === "save" ? T("saving") : T("saveCard")}</button></div>` : ""}
     </section>`;
@@ -490,6 +499,11 @@ Keine Bindestriche als Gedankenstrich verwenden.`;
   const speakBtn = (what, label) => `<button class="say" data-say="${what}" aria-label="${esc(label)}"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M11 5 6 9H3v6h3l5 4z"/><path d="M15.5 8.5a5 5 0 0 1 0 7"/><path d="M18.5 5.5a9 9 0 0 1 0 13"/></svg></button>`;
   const wordHTML = c => `<span class="de word">${ART[c.g] ? `<span class="art">${ART[c.g]}</span> ` : ""}${esc(c.w)}</span>`;
 
+  function famRow(c) {
+    const r = relatives(c);
+    if (!r.length) return "";
+    return `<div class="famrow"><span class="famh">${T("famH")}</span>${r.map(x => `<button class="famchip de ${gClass(x)}" data-act="sayt" data-t="${esc(fullWord(x))}">${ART[x.g] ? `<span class="art">${ART[x.g]}</span> ` : ""}${esc(x.w)}</button>`).join("")}</div>`;
+  }
   function renderLearn() {
     const due = dueCards().length, fresh = freshCards().length;
     if (!cur) {
@@ -508,7 +522,8 @@ Keine Bindestriche als Gedankenstrich verwenden.`;
       ${c.perf ? `<p class="perf de">Perfekt: <b>${esc(c.perf)}</b></p>` : ""}
       <div class="exrow"><p class="ex de">${c.ex}</p>${speakBtn("ex", T("sayEx"))}</div>
       ${c.tr ? `<p class="tr" lang="ar" dir="rtl">${esc(c.tr)}</p>` : ""}
-      ${c.note ? `<p class="note">${c.note}</p>` : ""}`;
+      ${c.note ? `<p class="note">${c.note}</p>` : ""}
+      ${famRow(c)}`;
     return `
       <p class="meta">${T("left").replace("{n}", queue.length + 1)}${s ? "" : ` <span class="new">${T("newCard")}</span>`}</p>
       <div class="card ${gClass(c)} ${flipped ? "flipped" : ""}" id="card" data-act="flip" role="button" tabindex="0" aria-label="${T("flip")}">
@@ -542,14 +557,23 @@ Keine Bindestriche als Gedankenstrich verwenden.`;
       <p class="meta dim">${a ? T("artStat").replace("{ok}", a.ok).replace("{w}", a.w) : ""}</p>`;
   }
 
+  function grouped() {
+    const out = [], seen = new Set();
+    CARDS.forEach(c => {
+      if (seen.has(c.id)) return;
+      const fam = CARDS.filter(x => famKey(x) === famKey(c));
+      fam.forEach((x, i) => { seen.add(x.id); out.push([x, i > 0, fam.length > 1]); });
+    });
+    return out;
+  }
   function renderList() {
-    const rows = CARDS.map(c => {
+    const rows = grouped().map(([c, sub, inFam]) => {
       const s = P.cards[c.id], b = s ? s.b : -1;
       const dots = Array.from({ length: INT.length - 1 }, (_, i) => `<i class="${i < b ? "on" : ""}"></i>`).join("");
       const open = listOpen === c.id;
-      return `<li class="${gClass(c)}"><button class="row" data-act="open" data-id="${c.id}">
+      return `<li class="${gClass(c)}${sub ? " sub" : ""}${inFam ? " infam" : ""}"><button class="row" data-act="open" data-id="${c.id}">
         ${wordHTML(c)}<span class="lvl" aria-label="${T("level")} ${Math.max(b, 0)}">${dots}</span></button>
-        ${open ? `<div class="detail"><p class="ar" lang="ar" dir="rtl">${esc(c.ar)}</p>${c.perf ? `<p class="perf de">Perfekt: <b>${esc(c.perf)}</b></p>` : ""}<p class="ex de">${c.ex}</p>${c.tr ? `<p class="tr" lang="ar" dir="rtl">${esc(c.tr)}</p>` : ""}<button class="btn again" data-act="del" data-id="${c.id}">${T("delCard")}</button></div>` : ""}</li>`;
+        ${open ? `<div class="detail"><p class="ar" lang="ar" dir="rtl">${esc(c.ar)}</p>${c.perf ? `<p class="perf de">Perfekt: <b>${esc(c.perf)}</b></p>` : ""}<p class="ex de">${c.ex}</p>${c.tr ? `<p class="tr" lang="ar" dir="rtl">${esc(c.tr)}</p>` : ""}${famRow(c)}<button class="btn again" data-act="del" data-id="${c.id}">${T("delCard")}</button></div>` : ""}</li>`;
     }).join("");
     const learned = CARDS.filter(c => P.cards[c.id] && P.cards[c.id].b >= 3).length;
     return `${renderAdd()}<p class="meta">${T("listStat").replace("{a}", learned).replace("{t}", CARDS.length)}</p><ul class="list">${rows}</ul>`;
@@ -618,6 +642,7 @@ Keine Bindestriche als Gedankenstrich verwenden.`;
     else if (act === "savecard") doSave();
     else if (act === "del") doDelete(el.dataset.id);
     else if (act === "unq") { unqueue(el.dataset.k); render(); }
+    else if (act === "sayt") { e.stopPropagation(); speak(el.dataset.t); }
     else if (act === "remon") remEnable(true);
     else if (act === "remoff") remEnable(false);
     else if (act === "remtest") remTest();
