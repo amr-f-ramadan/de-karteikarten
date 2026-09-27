@@ -17,6 +17,7 @@
     remHour: "Uhrzeit", remOn: "Erinnerung einschalten", remSave: "Uhrzeit speichern", remOff: "Erinnerung ausschalten", remTest: "Test auf diesem Gerät",
     remActive: "Erinnerung ist an, täglich um {h} Uhr", remInactive: "Erinnerung ist aus", remNoApp: "Öffne die App über das Symbol auf dem Home-Bildschirm, um Erinnerungen einzuschalten.",
     remDenied: "Mitteilungen sind blockiert. In den iPhone-Einstellungen unter Mitteilungen für diese App erlauben.", remNeedTok: "Für Erinnerungen wird der GitHub-Token gebraucht.",
+    delCard: "Karte löschen", delQ: "„{w}“ wirklich aus der Liste löschen?", deleted: "Gelöscht", delFail: "Löschen hat nicht geklappt",
     remDone: "Erinnerung gespeichert", remFail: "Erinnerung konnte nicht gespeichert werden", remTestBody: "So sieht die Erinnerung aus."
   };
   const T = k => (C.t[k] !== undefined ? C.t[k] : DEF[k] !== undefined ? DEF[k] : k);
@@ -286,6 +287,39 @@ Keine Bindestriche als Gedankenstrich verwenden.`;
     }
     throw new Error("409");
   }
+  async function removeCard(id) {
+    const url = "https://api.github.com/repos/" + C.repo + "/contents/cards.js";
+    const h = { Authorization: "Bearer " + token, Accept: "application/vnd.github+json" };
+    for (let tries = 0; tries < 2; tries++) {
+      const g = await fetch(url + "?ref=main&t=" + Date.now(), { headers: h, cache: "no-store" });
+      if (!g.ok) throw new Error(String(g.status));
+      const j = await g.json(), src = b64dec(j.content);
+      const w = {}; new Function("window", src)(w);
+      const list = (w.CARDS || []).filter(c => c.id !== id);
+      const head = src.slice(0, src.indexOf("window.CARDS"));
+      const out = head + "window.CARDS = [\n" + list.map(o => " " + JSON.stringify(o)).join(",\n") + "\n];\n";
+      const p = await fetch(url, { method: "PUT", headers: h, body: JSON.stringify({ message: "Wort gelöscht: " + id, content: b64enc(out), sha: j.sha, branch: "main" }) });
+      if (p.status === 409 || p.status === 422) continue;
+      if (!p.ok) throw new Error(String(p.status));
+      return;
+    }
+    throw new Error("409");
+  }
+  async function doDelete(id) {
+    const c = CARDS.find(x => x.id === id); if (!c) return;
+    if (!token) { flash(T("needTok")); return; }
+    if (!confirm(T("delQ").replace("{w}", fullWord(c)))) return;
+    try {
+      await removeCard(id);
+      CARDS.splice(CARDS.indexOf(c), 1);
+      nouns = CARDS.filter(x => x.g === "der" || x.g === "die" || x.g === "das");
+      queue = queue.filter(x => x.id !== id);
+      if (quiz && quiz.c.id === id) quiz = null;
+      delete P.cards[id]; delete P.art[id]; changed();
+      if (cur && cur.id === id) { cur = queue.shift() || null; flipped = false; }
+      listOpen = null; flash(T("deleted")); render();
+    } catch (e) { flash(T("delFail") + " (" + e.message + ")"); }
+  }
   function readForm() {
     const v = id => { const el = $("#" + id); return el ? el.value.trim() : ""; };
     return { w: v("f_w"), g: v("f_g") || "x", hint: v("f_hint"), perf: v("f_perf"), ar: v("f_ar"), def: v("f_def"), ex: v("f_ex"), note: v("f_note") };
@@ -457,7 +491,7 @@ Keine Bindestriche als Gedankenstrich verwenden.`;
       const open = listOpen === c.id;
       return `<li class="${gClass(c)}"><button class="row" data-act="open" data-id="${c.id}">
         ${wordHTML(c)}<span class="lvl" aria-label="${T("level")} ${Math.max(b, 0)}">${dots}</span></button>
-        ${open ? `<div class="detail"><p class="ar" lang="ar" dir="rtl">${esc(c.ar)}</p>${c.perf ? `<p class="perf de">Perfekt: <b>${esc(c.perf)}</b></p>` : ""}<p class="ex de">${c.ex}</p>${c.tr ? `<p class="tr" lang="ar" dir="rtl">${esc(c.tr)}</p>` : ""}</div>` : ""}</li>`;
+        ${open ? `<div class="detail"><p class="ar" lang="ar" dir="rtl">${esc(c.ar)}</p>${c.perf ? `<p class="perf de">Perfekt: <b>${esc(c.perf)}</b></p>` : ""}<p class="ex de">${c.ex}</p>${c.tr ? `<p class="tr" lang="ar" dir="rtl">${esc(c.tr)}</p>` : ""}<button class="btn again" data-act="del" data-id="${c.id}">${T("delCard")}</button></div>` : ""}</li>`;
     }).join("");
     const learned = CARDS.filter(c => P.cards[c.id] && P.cards[c.id].b >= 3).length;
     return `${renderAdd()}<p class="meta">${T("listStat").replace("{a}", learned).replace("{t}", CARDS.length)}</p><ul class="list">${rows}</ul>`;
@@ -524,6 +558,7 @@ Keine Bindestriche als Gedankenstrich verwenden.`;
     else if (act === "export") exportFile();
     else if (act === "gen") { const w = $("#nw"); if (w && add.card && !w.value.trim()) w.value = add.word; doGen(); }
     else if (act === "savecard") doSave();
+    else if (act === "del") doDelete(el.dataset.id);
     else if (act === "remon") remEnable(true);
     else if (act === "remoff") remEnable(false);
     else if (act === "remtest") remTest();
