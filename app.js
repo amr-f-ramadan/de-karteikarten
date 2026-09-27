@@ -583,6 +583,12 @@ Keine Bindestriche als Gedankenstrich verwenden.`;
     else if (flipped && (e.key === "2" || e.key === "ArrowRight")) answer(true);
   });
 
+  /* Kein Zoomen: Pinch, Doppeltippen und Auto-Zoom in Eingabefeldern verhindern */
+  const vp = document.querySelector('meta[name="viewport"]');
+  if (vp) vp.setAttribute("content", "width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover");
+  ["gesturestart", "gesturechange", "gestureend"].forEach(t => document.addEventListener(t, e => e.preventDefault(), { passive: false }));
+  document.addEventListener("touchmove", e => { if (e.touches && e.touches.length > 1) e.preventDefault(); }, { passive: false });
+
   buildQueue(); cur = queue.shift() || null;
   setStatus(token ? "syncing" : "local");
   render();
