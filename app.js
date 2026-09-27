@@ -18,6 +18,8 @@
     remActive: "Erinnerung ist an, täglich um {h} Uhr", remInactive: "Erinnerung ist aus", remNoApp: "Öffne die App über das Symbol auf dem Home-Bildschirm, um Erinnerungen einzuschalten.",
     remDenied: "Mitteilungen sind blockiert. In den iPhone-Einstellungen unter Mitteilungen für diese App erlauben.", remNeedTok: "Für Erinnerungen wird der GitHub-Token gebraucht.",
     delCard: "Karte löschen", delQ: "„{w}“ wirklich aus der Liste löschen?", deleted: "Gelöscht", delFail: "Löschen hat nicht geklappt",
+    queued: "Gemini antwortet gerade nicht. Das Wort steht auf der Warteliste und wird automatisch erstellt, sobald es wieder geht.",
+    waitH: "Warteliste", waitRm: "Von der Warteliste nehmen", autoAdded: "Neue Karte aus der Warteliste: {w}",
     remDone: "Erinnerung gespeichert", remFail: "Erinnerung konnte nicht gespeichert werden", remTestBody: "So sieht die Erinnerung aus."
   };
   const T = k => (C.t[k] !== undefined ? C.t[k] : DEF[k] !== undefined ? DEF[k] : k);
@@ -31,7 +33,7 @@
   const shuffle = a => { for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; };
 
   /* ---------- Fortschritt ---------- */
-  const emptyP = () => ({ v: 1, cards: {}, art: {}, newDay: { d: "", n: 0 }, opts: {}, updated: 0 });
+  const emptyP = () => ({ v: 1, cards: {}, art: {}, pending: {}, newDay: { d: "", n: 0 }, opts: {}, updated: 0 });
   function loadP() {
     try { const p = JSON.parse(localStorage.getItem(C.key) || "null"); if (p && p.v === 1) return Object.assign(emptyP(), p); } catch (e) {}
     const p = emptyP();
@@ -47,6 +49,7 @@
     for (const src of [a, b]) {
       for (const [id, s] of Object.entries(src.cards || {})) if (!o.cards[id] || s.t > o.cards[id].t) o.cards[id] = s;
       for (const [id, s] of Object.entries(src.art || {})) if (!o.art[id] || s.t > o.art[id].t) o.art[id] = s;
+      for (const [k, s] of Object.entries(src.pending || {})) if (!o.pending[k] || s.t > o.pending[k].t) o.pending[k] = s;
     }
     const na = a.newDay || { d: "", n: 0 }, nb = b.newDay || { d: "", n: 0 };
     o.newDay = na.d === nb.d ? { d: na.d, n: Math.max(na.n, nb.n) } : (na.d > nb.d ? na : nb);
@@ -189,7 +192,7 @@
         if (remote) {
           const before = JSON.stringify(P.cards) + JSON.stringify(P.art);
           const m = merge(P, remote);
-          if (JSON.stringify(m.cards) + JSON.stringify(m.art) !== JSON.stringify(remote.cards) + JSON.stringify(remote.art)) dirty = true;
+          if (JSON.stringify(m.cards) + JSON.stringify(m.art) + JSON.stringify(m.pending) !== JSON.stringify(remote.cards) + JSON.stringify(remote.art) + JSON.stringify(remote.pending || {})) dirty = true;
           P = m; writeLocal();
           if (before !== JSON.stringify(P.cards) + JSON.stringify(P.art) && !cur) { buildQueue(); cur = queue.shift() || null; }
         } else dirty = true;
@@ -276,7 +279,7 @@ Keine Bindestriche als Gedankenstrich verwenden.`;
       while (src.includes('"id":"' + id + '"') || CARDS.some(c => c.id === id)) id = slug(card.w) + n++;
       card.id = id;
       const o = { id, g: card.g, w: card.w, cat: T("newCat"), hint: card.hint || "", ar: card.ar, def: card.def || "", ex: card.ex };
-      if (card.perf) o.perf = card.perf; if (card.note) o.note = card.note;
+      if (card.perf) o.perf = card.perf; if (card.note) o.note = card.note; if (card.src) o.src = card.src;
       const i = src.lastIndexOf("\n];");
       if (i < 0) throw new Error("format");
       const out = src.slice(0, i) + ",\n " + JSON.stringify(o) + src.slice(i);
@@ -331,7 +334,11 @@ Keine Bindestriche als Gedankenstrich verwenden.`;
     if (exists(add.word)) { add.msg = T("dup"); render(); return; }
     add.busy = "gen"; add.msg = ""; render();
     try { add.card = await genCard(add.word); }
-    catch (e) { const m = e.message; add.msg = m === "key" ? T("keyBad") : m === "quota" ? T("quota") : m === "busy" ? T("overload") : T("genFail") + " (" + m + ")"; }
+    catch (e) {
+      const m = e.message;
+      if (m === "key") add.msg = T("keyBad");
+      else { queueWord(add.word); add.msg = T("queued"); add.word = ""; }
+    }
     add.busy = false; render();
   }
   async function doSave() {
@@ -348,6 +355,54 @@ Keine Bindestriche als Gedankenstrich verwenden.`;
     } catch (e) { add.busy = false; add.msg = T("genFail") + " (" + e.message + ")"; }
     add.busy = false; render();
   }
+  /* ---------- Warteliste ---------- */
+  const pkey = w => w.toLowerCase().replace(/^(der|die|das)\s+/, "").trim();
+  const isDone = k => CARDS.some(c => c.w.toLowerCase() === k || c.src === k);
+  const waiting = () => Object.entries(P.pending || {}).filter(([k, s]) => !s.done && !isDone(k));
+  function queueWord(w) { P.pending = P.pending || {}; P.pending[pkey(w)] = { w: w, t: Date.now() }; changed(); }
+  function unqueue(k) { if (P.pending && P.pending[k]) { P.pending[k] = { w: P.pending[k].w, t: Date.now(), done: true }; changed(); } }
+  let working = false;
+  async function refreshCards() {
+    if (!token) return;
+    try {
+      const r = await fetch("https://api.github.com/repos/" + C.repo + "/contents/cards.js?ref=main&t=" + Date.now(), { headers: { Authorization: "Bearer " + token, Accept: "application/vnd.github+json" }, cache: "no-store" });
+      if (!r.ok) return;
+      const w = {}; new Function("window", b64dec((await r.json()).content))(w);
+      if (!Array.isArray(w.CARDS) || !w.CARDS.length) return;
+      const known = new Set(CARDS.map(c => c.id)), fresh = w.CARDS.filter(c => !known.has(c.id));
+      const ids = new Set(w.CARDS.map(c => c.id));
+      for (let i = CARDS.length - 1; i >= 0; i--) if (!ids.has(CARDS[i].id)) CARDS.splice(i, 1);
+      fresh.forEach(c => CARDS.push(c));
+      if (fresh.length) { nouns = CARDS.filter(c => c.g === "der" || c.g === "die" || c.g === "das"); if (!cur) { buildQueue(); cur = queue.shift() || null; } render(); }
+    } catch (e) {}
+  }
+  async function workQueue() {
+    if (working || !gkey || !token) return;
+    working = true;
+    try {
+      await refreshCards();
+      for (const [k, s] of waiting()) {
+        let card;
+        try { card = await genCard(s.w); } catch (e) { break; }
+        if (!card || !card.w || !card.ar || !card.ex) continue;
+        card.src = k;
+        if (exists(card.w)) { unqueue(k); continue; }
+        try {
+          const o = await saveCard(card);
+          CARDS.push(o); nouns = CARDS.filter(c => c.g === "der" || c.g === "die" || c.g === "das");
+          unqueue(k); flash(T("autoAdded").replace("{w}", fullWord(o)));
+          if (!cur) { buildQueue(); cur = queue.shift() || null; }
+        } catch (e) { break; }
+      }
+    } finally { working = false; render(); }
+  }
+  setInterval(workQueue, 5 * 60 * 1000);
+  document.addEventListener("visibilitychange", () => { if (document.visibilityState === "visible") setTimeout(workQueue, 3000); });
+  function renderWait() {
+    const w = waiting();
+    if (!w.length) return "";
+    return `<div class="wait"><p class="waith">${T("waitH")}</p>${w.map(([k, s]) => `<span class="chip de">${esc(s.w)}<button data-act="unq" data-k="${esc(k)}" aria-label="${T("waitRm")}">×</button></span>`).join("")}</div>`;
+  }
   function renderAdd() {
     const c = add.card, f = (id, val, big) => `<label class="fld">${T(id)}${big ? `<textarea id="${id}" rows="2">${esc(val || "")}</textarea>` : `<input id="${id}" value="${esc(val || "")}">`}</label>`;
     const sel = c ? `<label class="fld">${T("f_g")}<select id="f_g">${["der", "die", "das", "pl", "x"].map(g => `<option value="${g}" ${c.g === g ? "selected" : ""}>${g === "x" ? "kein Artikel" : g === "pl" ? "die (Plural)" : g}</option>`).join("")}</select></label>` : "";
@@ -356,6 +411,7 @@ Keine Bindestriche als Gedankenstrich verwenden.`;
       <div class="addrow"><input id="nw" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="${esc(T("addPh"))}" value="${esc(add.word)}">
       <button class="btn ok" data-act="gen" ${add.busy ? "disabled" : ""}>${add.busy === "gen" ? T("genBusy") : T("gen")}</button></div>
       ${add.msg ? `<p class="addmsg">${esc(add.msg)}</p>` : ""}
+      ${renderWait()}
       ${c ? `<div class="preview">${f("f_w", c.w)}${sel}${f("f_hint", c.hint)}${f("f_perf", c.perf)}${f("f_ar", c.ar)}${f("f_def", c.def, 1)}${f("f_ex", c.ex, 1)}${f("f_note", c.note, 1)}
         <div class="row2"><button class="btn" data-act="discard">${T("discard")}</button><button class="btn" data-act="gen">${T("regen")}</button></div>
         <button class="btn ok wide" data-act="savecard" ${add.busy ? "disabled" : ""}>${add.busy === "save" ? T("saving") : T("saveCard")}</button></div>` : ""}
@@ -561,6 +617,7 @@ Keine Bindestriche als Gedankenstrich verwenden.`;
     else if (act === "gen") { const w = $("#nw"); if (w && add.card && !w.value.trim()) w.value = add.word; doGen(); }
     else if (act === "savecard") doSave();
     else if (act === "del") doDelete(el.dataset.id);
+    else if (act === "unq") { unqueue(el.dataset.k); render(); }
     else if (act === "remon") remEnable(true);
     else if (act === "remoff") remEnable(false);
     else if (act === "remtest") remTest();
@@ -592,5 +649,5 @@ Keine Bindestriche als Gedankenstrich verwenden.`;
   buildQueue(); cur = queue.shift() || null;
   setStatus(token ? "syncing" : "local");
   render();
-  if (token) sync(true);
+  if (token) sync(true).then(() => setTimeout(workQueue, 1500));
 })();
