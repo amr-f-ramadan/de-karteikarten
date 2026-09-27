@@ -67,6 +67,20 @@
     next();
   }
   function next() { cur = queue.shift() || null; flipped = false; render(); }
+  let turning = false;
+  const calm = () => window.matchMedia && matchMedia("(prefers-reduced-motion: reduce)").matches;
+  function flip() {
+    if (flipped || turning) return;
+    const el = $("#card");
+    if (!el || !el.animate || calm()) { flipped = true; render(); return; }
+    turning = true;
+    el.animate([{ transform: "perspective(1000px) rotateY(0deg)" }, { transform: "perspective(1000px) rotateY(90deg)" }], { duration: 170, easing: "ease-in", fill: "forwards" }).onfinish = () => {
+      flipped = true; render();
+      const n = $("#card");
+      if (n) n.animate([{ transform: "perspective(1000px) rotateY(-90deg)" }, { transform: "perspective(1000px) rotateY(0deg)" }], { duration: 220, easing: "ease-out" });
+      turning = false;
+    };
+  }
 
   /* ---------- Artikel-Quiz ---------- */
   const nouns = CARDS.filter(c => c.g === "der" || c.g === "die" || c.g === "das");
@@ -165,7 +179,7 @@
       }
       if (dirty) await push();
       setStatus("ok");
-    } catch (e) { setStatus(String(e.message) === "401" ? "badtoken" : "error"); }
+    } catch (e) { const m = String(e.message); setStatus(m === "401" ? "badtoken" : m === "403" ? "noperm" : "error"); }
     busy = false; render();
   }
   function scheduleSync() { if (!token) return; clearTimeout(syncTimer); syncTimer = setTimeout(() => sync(false), 15000); }
@@ -219,7 +233,7 @@
       ${c.note ? `<p class="note">${c.note}</p>` : ""}`;
     return `
       <p class="meta">${T("left").replace("{n}", queue.length + 1)}${s ? "" : ` <span class="new">${T("newCard")}</span>`}</p>
-      <div class="card ${gClass(c)} ${flipped ? "flipped" : ""}" data-act="flip" role="button" tabindex="0" aria-label="${T("flip")}">
+      <div class="card ${gClass(c)} ${flipped ? "flipped" : ""}" id="card" data-act="flip" role="button" tabindex="0" aria-label="${T("flip")}">
         ${c.cat ? `<p class="cat">${esc(c.cat)}</p>` : ""}
         <div class="face">${flipped ? back : front}</div>
         ${speakBtn("w", T("sayWord"))}
@@ -299,7 +313,7 @@
     if (say) { e.stopPropagation(); const c = mode === "quiz" ? quiz && quiz.c : cur; if (c) speak(say.dataset.say === "ex" ? c.ex : fullWord(c)); return; }
     const el = e.target.closest("[data-act]"); if (!el) return;
     const act = el.dataset.act;
-    if (act === "flip") { if (!flipped) { flipped = true; render(); } }
+    if (act === "flip") flip();
     else if (act === "yes") answer(true);
     else if (act === "no") answer(false);
     else if (act === "more") { P.newDay = { d: today(), n: Math.max(0, newToday() - opt("newPerDay", C.newPerDay || 10)) }; changed(); buildQueue(); next(); }
@@ -324,7 +338,7 @@
   });
   document.addEventListener("keydown", e => {
     if (mode !== "learn" || !cur || /INPUT|TEXTAREA/.test(e.target.tagName)) return;
-    if (e.key === " " || e.key === "Enter") { e.preventDefault(); if (!flipped) { flipped = true; render(); } }
+    if (e.key === " " || e.key === "Enter") { e.preventDefault(); flip(); }
     else if (flipped && (e.key === "1" || e.key === "ArrowLeft")) answer(false);
     else if (flipped && (e.key === "2" || e.key === "ArrowRight")) answer(true);
   });
