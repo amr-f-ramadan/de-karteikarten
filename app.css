@@ -123,3 +123,7 @@ nav button:focus-visible{outline:3px solid var(--accent);outline-offset:-3px}
 .btn[disabled]{opacity:.6}
 #remDot{display:inline-block;width:10px;height:10px;border-radius:50%;background:var(--muted);vertical-align:middle}
 #remDot[data-on=true]{background:var(--ok);box-shadow:0 0 8px var(--ok)}
+.wait{margin-top:12px;display:flex;flex-wrap:wrap;gap:6px;align-items:center}
+.waith{width:100%;margin:0 4px 2px;font-size:.8rem;color:var(--muted);font-weight:600}
+.chip{display:inline-flex;align-items:center;gap:4px;padding:5px 6px 5px 12px;border-radius:999px;background:var(--glass-strong);border:1px solid var(--rim);font-size:.95rem}
+.chip button{all:unset;cursor:pointer;width:22px;height:22px;border-radius:50%;display:grid;place-items:center;color:var(--muted)}
