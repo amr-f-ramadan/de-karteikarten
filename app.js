@@ -229,7 +229,7 @@
   const GK = C.key + ":gemini";
   let gkey = ""; try { gkey = localStorage.getItem(GK) || ""; } catch (e) {}
   let add = { word: "", busy: false, card: null, msg: "" };
-  const MODELS = ["gemini-flash-latest", "gemini-2.5-flash", "gemini-2.0-flash"];
+  const MODELS = ["gemini-flash-lite-latest", "gemini-flash-latest", "gemini-2.5-flash-lite", "gemini-2.5-flash"];
   const PROMPT = w => `Du erstellst eine Lernkarte für einen arabischen Muttersprachler (Deutsch B1 bis B2).
 Wort oder Ausdruck: "${w}"
 Regeln:
@@ -248,15 +248,15 @@ Keine Bindestriche als Gedankenstrich verwenden.`;
     required: ["w", "g", "hint", "ar", "def", "ex"] };
   async function genCard(word) {
     let last = "";
-    for (const m of MODELS.concat(MODELS)) {
+    for (const m of MODELS) {
       const r = await fetch("https://generativelanguage.googleapis.com/v1beta/models/" + m + ":generateContent", {
         method: "POST", headers: { "Content-Type": "application/json", "x-goog-api-key": gkey },
         body: JSON.stringify({ contents: [{ parts: [{ text: PROMPT(word) }] }], generationConfig: { responseMimeType: "application/json", responseSchema: SCHEMA, temperature: 0.4 } })
       });
       if (r.status === 404) { last = last || "404"; continue; }
-      if (r.status >= 500) { last = "busy"; await new Promise(res => setTimeout(res, 1200)); continue; }
+      if (r.status >= 500) { last = last === "quota" ? "quota" : "busy"; await new Promise(res => setTimeout(res, 800)); continue; }
+      if (r.status === 429) { last = "quota"; continue; }
       if (r.status === 400 || r.status === 403) throw new Error("key");
-      if (r.status === 429) throw new Error("quota");
       if (!r.ok) throw new Error(String(r.status));
       const j = await r.json();
       const txt = (((j.candidates || [])[0] || {}).content || {}).parts;

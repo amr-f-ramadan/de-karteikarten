@@ -32,12 +32,12 @@ const SCHEMA = { type: "OBJECT", properties: {
   perf: { type: "STRING" }, ar: { type: "STRING" }, def: { type: "STRING" }, ex: { type: "STRING" }, note: { type: "STRING" } },
   required: ["w", "g", "hint", "ar", "def", "ex"] };
 async function gen(word) {
-  for (const m of ["gemini-flash-latest", "gemini-2.5-flash", "gemini-2.0-flash"]) {
+  for (const m of ["gemini-flash-lite-latest", "gemini-flash-latest", "gemini-2.5-flash-lite", "gemini-2.5-flash"]) {
     const r = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${m}:generateContent`, {
       method: "POST", headers: { "Content-Type": "application/json", "x-goog-api-key": key },
       body: JSON.stringify({ contents: [{ parts: [{ text: PROMPT(word) }] }], generationConfig: { responseMimeType: "application/json", responseSchema: SCHEMA, temperature: 0.4 } })
     });
-    if (r.status === 404 || r.status >= 500) { console.log(`${m}: ${r.status}`); continue; }
+    if (r.status === 404 || r.status === 429 || r.status >= 500) { console.log(`${m}: ${r.status}`); continue; }
     if (!r.ok) { console.log(`${m}: ${r.status}`); return null; }
     const j = await r.json();
     try { return JSON.parse(j.candidates[0].content.parts.map(p => p.text || "").join("")); } catch { return null; }
