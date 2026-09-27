@@ -365,7 +365,8 @@ Keine Bindestriche als Gedankenstrich verwenden.`;
   /* ---------- Erinnerungen ---------- */
   const VAPID = "BFZuIFPCB6Xfxe7Zh8ldo_6S9V4jIi8IskNE2ptXS6XJiHVb48SpkilWmXUOH3jwDjE9rIsFhXYL3_iy9jeiLz8";
   const RK = C.key + ":remind";
-  let rem = { on: false, hour: 19 }; try { rem = Object.assign(rem, JSON.parse(localStorage.getItem(RK) || "{}")); } catch (e) {}
+  let rem = { on: false, hour: 19, min: 0 }; try { rem = Object.assign(rem, JSON.parse(localStorage.getItem(RK) || "{}")); } catch (e) {}
+  const hhmm = (h, m) => String(h).padStart(2, "0") + ":" + String(m || 0).padStart(2, "0");
   let remBusy = false;
   const standalone = () => (navigator.standalone === true) || (window.matchMedia && matchMedia("(display-mode: standalone)").matches);
   const canPush = () => "serviceWorker" in navigator && "PushManager" in window && "Notification" in window;
@@ -388,7 +389,7 @@ Keine Bindestriche als Gedankenstrich verwenden.`;
   async function remEnable(on) {
     if (remBusy) return;
     if (!token) { flash(T("remNeedTok")); return; }
-    const hr = $("#remHour"); if (hr) rem.hour = parseInt(hr.value, 10);
+    const hr = $("#remHour"); if (hr) { const v = parseInt(hr.value, 10); rem.hour = Math.floor(v / 60); rem.min = v % 60; }
     remBusy = true; render();
     try {
       let sub = null;
@@ -398,7 +399,7 @@ Keine Bindestriche als Gedankenstrich verwenden.`;
         const reg = await navigator.serviceWorker.ready;
         sub = await reg.pushManager.getSubscription() || await reg.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: u8(VAPID) });
       }
-      await putProgressFile("push.json", { enabled: on, hour: rem.hour, tz: Intl.DateTimeFormat().resolvedOptions().timeZone || "Europe/Berlin", sub: sub ? sub.toJSON() : null, updated: new Date().toISOString() });
+      await putProgressFile("push.json", { enabled: on, hour: rem.hour, minute: rem.min || 0, tz: Intl.DateTimeFormat().resolvedOptions().timeZone || "Europe/Berlin", sub: sub ? sub.toJSON() : null, updated: new Date().toISOString() });
       rem.on = on; try { localStorage.setItem(RK, JSON.stringify(rem)); } catch (x) {}
       flash(T("remDone"));
     } catch (e) { flash(e.message === "denied" ? T("remDenied") : T("remFail") + " (" + e.message + ")"); }
@@ -412,10 +413,11 @@ Keine Bindestriche als Gedankenstrich verwenden.`;
     } catch (e) { flash(T("remFail") + " (" + e.message + ")"); }
   }
   function renderRem() {
-    const hours = Array.from({ length: 24 }, (_, h) => `<option value="${h}" ${h === rem.hour ? "selected" : ""}>${String(h).padStart(2, "0")}:00</option>`).join("");
+    const sel = rem.hour * 60 + (rem.min || 0);
+    const hours = Array.from({ length: 96 }, (_, i) => `<option value="${i * 15}" ${i * 15 === sel ? "selected" : ""}>${hhmm(Math.floor(i / 4), (i % 4) * 15)}</option>`).join("");
     let body;
     if (!canPush() || !standalone()) body = `<p class="dim">${T("remNoApp")}</p>`;
-    else body = `<p><span id="remDot" data-on="${rem.on}"></span> ${rem.on ? T("remActive").replace("{h}", String(rem.hour).padStart(2, "0") + ":00") : T("remInactive")}</p>
+    else body = `<p><span id="remDot" data-on="${rem.on}"></span> ${rem.on ? T("remActive").replace("{h}", hhmm(rem.hour, rem.min)) : T("remInactive")}</p>
       <label class="fld inline">${T("remHour")} <select id="remHour">${hours}</select></label>
       <div class="row2">${rem.on
         ? `<button class="btn" data-act="remon" ${remBusy ? "disabled" : ""}>${T("remSave")}</button><button class="btn" data-act="remoff" ${remBusy ? "disabled" : ""}>${T("remOff")}</button>`
