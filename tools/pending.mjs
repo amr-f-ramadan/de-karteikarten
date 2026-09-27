@@ -15,6 +15,7 @@ const isDone = k => cards.some(c => c.w.toLowerCase() === k || c.src === k);
 const todo = Object.entries(P.pending || {}).filter(([k, s]) => !s.done && !isDone(k)).slice(0, 5);
 if (!todo.length) { console.log("Warteliste ist leer."); process.exit(0); }
 
+const famKey = c => c.fam || c.w.toLowerCase();
 const PROMPT = w => `Du erstellst eine Lernkarte für einen arabischen Muttersprachler (Deutsch B1 bis B2).
 Wort oder Ausdruck: "${w}"
 Regeln:
@@ -26,11 +27,14 @@ Regeln:
 - def: einfache deutsche Erklärung in einem Satz, B1-Niveau.
 - ex: ein natürlicher Beispielsatz aus dem Alltag oder Beruf, B1-Niveau; das Zielwort in <b>…</b>.
 - note: nur wenn es eine typische Falle gibt (Verwechslung, Kasus, falscher Freund), sonst leer.
+- fam: das Stammwort der Wortfamilie, klein geschrieben, meist der Infinitiv des Verbs, sonst das Grundwort (z. B. "empfinden" für empfindlich, Empfindung und empfinden).
+  Schon vorhandene Wortfamilien: ${[...new Set(cards.map(famKey))].join(", ")}.
+  Wenn das Wort wirklich zu einer davon gehört (gleicher Wortstamm, nicht nur gleiche Vorsilbe), nimm genau diesen Wert. Sonst ein neues Stammwort.
 Keine Bindestriche als Gedankenstrich verwenden.`;
 const SCHEMA = { type: "OBJECT", properties: {
   w: { type: "STRING" }, g: { type: "STRING", enum: ["der", "die", "das", "pl", "x"] }, hint: { type: "STRING" },
-  perf: { type: "STRING" }, ar: { type: "STRING" }, def: { type: "STRING" }, ex: { type: "STRING" }, note: { type: "STRING" } },
-  required: ["w", "g", "hint", "ar", "def", "ex"] };
+  perf: { type: "STRING" }, ar: { type: "STRING" }, def: { type: "STRING" }, ex: { type: "STRING" }, note: { type: "STRING" }, fam: { type: "STRING" } },
+  required: ["w", "g", "hint", "ar", "def", "ex", "fam"] };
 async function gen(word) {
   for (const m of ["gemini-flash-lite-latest", "gemini-flash-latest", "gemini-2.5-flash-lite", "gemini-2.5-flash"]) {
     const r = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${m}:generateContent`, {
@@ -54,6 +58,8 @@ for (const [k, s] of todo) {
   while (cards.some(x => x.id === id)) id = slug(c.w) + n++;
   const o = { id, g: c.g, w: c.w, cat: "Selbst hinzugefügt", hint: c.hint || "", ar: c.ar, def: c.def || "", ex: c.ex, src: k };
   if (c.perf) o.perf = c.perf; if (c.note) o.note = c.note;
+  const fk = (c.fam || "").trim().toLowerCase();
+  if (fk && (fk !== o.w.toLowerCase() || cards.some(x => famKey(x) === fk))) o.fam = fk;
   if (cards.some(x => x.w.toLowerCase() === o.w.toLowerCase())) { console.log(`Schon vorhanden: ${o.w}`); continue; }
   cards.push(o); added.push(o);
   const i = src.lastIndexOf("\n];");
