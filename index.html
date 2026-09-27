@@ -4,22 +4,30 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>DE: Karteikarten</title>
-<link rel="apple-touch-icon" href="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAALQAAAC0BAMAAADP4xsBAAAAGFBMVEX////+/v/789P/0gD/zgBpTknWAAAAAABm4oyZAAADMElEQVR42u3ZP28TMRgG8MdOMiGIXcGaHFcqVtryCRDslVDFzkdg4cvwDSLa7kgFxkqAytpQ1+1aFDtFTCg2Q/5fQ8/nu6PLe+Mp+cnxvX79+MLeoq6Lg2iiiSaaaKKJJppoookmmmiiiSY69mquuqkKM2kg3d8rTK+9SELok31ZmB7svQmg3b40hWnpD3by6X6EDMN+B1TIZx9TDv6OzqWdtVGlxo5z6ZGIq2I7yKWVj1whtr7VOKL2lNeesuvjOJoyNNdEE115WJg0d7FiqcmcJRhGe7O0r9o8Kpxm7OWsFR/7MyYsAPHgyXKT3osadWMeiTbU5rdzYQHw5Zzk4uYajisAPAEUTxs4n9zV8yDmIh/j6D22Af6nh23uVAoLC1z2Gjt6ngqTKNp7xbYBOAW1seUUf7YPWAxaAPBh/FAfJ7HFxwCASaCPHe3Wu9ZCjr8hWam69pZNa1CeauBi8xNg0Br/JAtAVLAazT0OuEe2joXODhPgors0TCbH1RJTfIvRqAkAmx8zq9X2K2hPdwG4h8PFW63dRMoKaKsBNLIHGG/KT4gHdwDadtZgZO5XA2m0AUCLaR41FuMqrIDOzN7a2rXpKUfPr91pn6qeVgElcDt7403XFws0Xx/VQXtTcYUs9Q80dS1z7b0xNqmQ7ix11ZGqZELYuDENFw+VrlfNqJlbMd+CVdH5RALgNFMl9sbOF0r/AsBd+/rAS9Mi0YD7nr17/7kQJWnmtwAk+tq+m5atECaGHQ3+Y7YTgDFZpofMI443rzTQeQdMI87k+T2IjThmGnHYRkcjPbF+FnECBh2Qr1u7QKqQ9g/adpavn04+FJlDGikU4HgCqNT1D4UBwNO8zSUwX89itPqq2GSRL4f3o9h8PZv2s+lh5rKX88YpMF8vVouZSIOqD3fmX4c7b0sf7gLOiXRGJ5rocklVVUZlpezrWhZPZ9tJM9tvfkbT2U3tfz5GYWujYyfbs1xaxtqitlELmU93RVR5XCX5qzEdxtBtGbA38q4u/lemv9oK2XbXoYsXWipCaLZefB2tep2zKiywlLYCookmmmiiiSaaaKKJJppoookm+pbpv6Sx8ErXWlGsAAAAAElFTkSuQmCC">
+<link rel="apple-touch-icon" href="data:image/png;base64,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">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="DE: Karteikarten">
-<meta name="theme-color" content="#DCE3EA">
+<meta name="theme-color" content="#EEF0F8" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#0C0F1D" media="(prefers-color-scheme: dark)">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Literata:opsz,wght@7..72,400;7..72,600;7..72,700&family=Noto+Naskh+Arabic:wght@400;600&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Literata:opsz,wght@7..72,500;7..72,700&family=Noto+Naskh+Arabic:wght@500;600&display=swap" rel="stylesheet">
 <style>
-:root{--bg:#DCE3EA;--paper:#FFFFFF;--ink:#1E2A4A;--muted:#5B6781;--line:#C9D3DE;--accent:#FF6FB5;
-  --der:#2D5F9E;--die:#B03F37;--das:#2F7A4E;--other:#8A6D1E;--ok:#1F7A5C;--again:#B4412F;
-  --ui:"Literata",Georgia,"Times New Roman",serif;--de:"Literata",Georgia,"Times New Roman",serif;--arf:"Noto Naskh Arabic","Geeza Pro",Arial,sans-serif}
-@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#141A26;--paper:#1F2737;--ink:#EEF2F8;--muted:#A3AEC2;--line:#323D52;
-  --der:#7FAEE8;--die:#EE8A80;--das:#86C996;--other:#E0C06A;--ok:#4CC39A;--again:#F08A76}}
-:root[data-theme="dark"]{--bg:#141A26;--paper:#1F2737;--ink:#EEF2F8;--muted:#A3AEC2;--line:#323D52;
-  --der:#7FAEE8;--die:#EE8A80;--das:#86C996;--other:#E0C06A;--ok:#4CC39A;--again:#F08A76}
+:root{--bg:#EEF0F8;--ink:#141A2E;--muted:#5E6780;--accent:#6D4CFF;
+  --glass:rgba(255,255,255,.55);--glass-strong:rgba(255,255,255,.7);--rim:rgba(255,255,255,.75);--shine:rgba(255,255,255,.9);--shadow:rgba(40,40,90,.35);
+  --orb1:rgba(255,120,190,.55);--orb2:rgba(60,210,200,.5);--orb3:rgba(255,200,80,.45);
+  --der:#2F6BD8;--die:#D93A4A;--das:#1F9A5E;--other:#B7822A;--ok:#1F9A5E;--again:#D93A4A;
+  --ui:-apple-system,BlinkMacSystemFont,"SF Pro Text","Segoe UI",Roboto,sans-serif;--de:"Literata",Georgia,"Times New Roman",serif;--arf:"Noto Naskh Arabic","Geeza Pro",Arial,sans-serif}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#0C0F1D;--ink:#F2F4FA;--muted:#A0A8C0;--accent:#A895FF;
+  --glass:rgba(255,255,255,.08);--glass-strong:rgba(255,255,255,.14);--rim:rgba(255,255,255,.16);--shine:rgba(255,255,255,.22);--shadow:rgba(0,0,0,.6);
+  --orb1:rgba(200,60,150,.45);--orb2:rgba(20,150,150,.4);--orb3:rgba(110,80,255,.45);
+  --der:#7FAEFF;--die:#FF8A8F;--das:#6FE0A6;--other:#F0C46A;--ok:#34C27E;--again:#FF6B73}}
+:root[data-theme="dark"]{--bg:#0C0F1D;--ink:#F2F4FA;--muted:#A0A8C0;--accent:#A895FF;
+  --glass:rgba(255,255,255,.08);--glass-strong:rgba(255,255,255,.14);--rim:rgba(255,255,255,.16);--shine:rgba(255,255,255,.22);--shadow:rgba(0,0,0,.6);
+  --orb1:rgba(200,60,150,.45);--orb2:rgba(20,150,150,.4);--orb3:rgba(110,80,255,.45);
+  --der:#7FAEFF;--die:#FF8A8F;--das:#6FE0A6;--other:#F0C46A;--ok:#34C27E;--again:#FF6B73}
 </style>
 <link rel="stylesheet" href="app.css">
 </head>
@@ -30,10 +38,10 @@
 </div>
 <div id="toast" hidden role="status"></div>
 <nav>
-  <button data-mode="learn">Lernen<span id="badge" hidden></span></button>
-  <button data-mode="quiz">der/die/das</button>
-  <button data-mode="list">Alle Wörter</button>
-  <button data-mode="settings">Einstellungen</button>
+  <button data-mode="learn"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="6" width="14" height="14" rx="3"/><path d="M7 3h11a3 3 0 0 1 3 3v11"/></svg>Lernen<span id="badge" hidden></span></button>
+  <button data-mode="quiz"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="5"/><circle cx="12" cy="12" r="1.5"/></svg>der/die/das</button>
+  <button data-mode="list"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6h11M9 12h11M9 18h11"/><circle cx="4.5" cy="6" r="1"/><circle cx="4.5" cy="12" r="1"/><circle cx="4.5" cy="18" r="1"/></svg>Wörter</button>
+  <button data-mode="settings"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h10M18 7h2M4 17h4M12 17h8"/><circle cx="16" cy="7" r="2"/><circle cx="10" cy="17" r="2"/></svg>Optionen</button>
 </nav>
 <script>
 window.APP = {
