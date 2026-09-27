@@ -16,6 +16,9 @@ const todo = Object.entries(P.pending || {}).filter(([k, s]) => !s.done && !isDo
 if (!todo.length) { console.log("Warteliste ist leer."); process.exit(0); }
 
 const famKey = c => c.fam || c.w.toLowerCase();
+const plainDe = t => String(t || "").toLowerCase().replace(/ä/g, "a").replace(/ö/g, "o").replace(/ü/g, "u").replace(/ß/g, "ss");
+const sameStem = (w, fam) => { const st = plainDe(fam).replace(/(end|ern|eln|en|n|e)$/, ""); return st.length >= 3 && plainDe(w).includes(st); };
+const topicOf = list => { const n = {}; list.forEach(x => { if (x.cat) n[x.cat] = (n[x.cat] || 0) + 1; }); let best = null; for (const x of list) if (x.cat && (!best || n[x.cat] > n[best])) best = x.cat; return best; };
 const PROMPT = w => `Du erstellst eine Lernkarte für einen arabischen Muttersprachler (Deutsch B1 bis B2).
 Wort oder Ausdruck: "${w}"
 Regeln:
@@ -29,7 +32,8 @@ Regeln:
 - note: nur wenn es eine typische Falle gibt (Verwechslung, Kasus, falscher Freund), sonst leer.
 - fam: das Stammwort der Wortfamilie, klein geschrieben, meist der Infinitiv des Verbs, sonst das Grundwort (z. B. "empfinden" für empfindlich, Empfindung und empfinden).
   Schon vorhandene Wortfamilien: ${[...new Set(cards.map(famKey))].join(", ")}.
-  Wenn das Wort wirklich zu einer davon gehört (gleicher Wortstamm, nicht nur gleiche Vorsilbe), nimm genau diesen Wert. Sonst ein neues Stammwort.
+  Wenn das Wort wirklich zu einer davon gehört, nimm genau diesen Wert. Sonst ein neues Stammwort.
+  Wichtig: Wortfamilie heißt gleicher Wortstamm in der Form (abwesend und Abwesenheit), NICHT ähnliche Bedeutung (abwesend und verlassen sind keine Familie) und NICHT nur gleiche Vorsilbe.
 - cat: das Thema der Karte auf Deutsch, ein bis drei Wörter.
   Schon vorhandene Themen: ${[...new Set(cards.map(c => c.cat).filter(Boolean))].join(", ")}.
   Nimm eines davon, wenn es inhaltlich passt. Nur wenn keines passt, erfinde ein neues, eher allgemeines Thema (z. B. "Arbeit", "Gesundheit", "Wohnen").
@@ -62,7 +66,8 @@ for (const [k, s] of todo) {
   const o = { id, g: c.g, w: c.w, cat: (c.cat || "").trim() || "Selbst hinzugefügt", hint: c.hint || "", ar: c.ar, def: c.def || "", ex: c.ex, src: k };
   if (c.perf) o.perf = c.perf; if (c.note) o.note = c.note;
   const fk = (c.fam || "").trim().toLowerCase();
-  if (fk && (fk !== o.w.toLowerCase() || cards.some(x => famKey(x) === fk))) o.fam = fk;
+  if (fk && sameStem(o.w, fk) && (fk !== o.w.toLowerCase() || cards.some(x => famKey(x) === fk))) o.fam = fk;
+  if (o.fam) { const kin = cards.filter(x => famKey(x) === o.fam && x.cat); if (kin.length) o.cat = topicOf(kin); }
   if (cards.some(x => x.w.toLowerCase() === o.w.toLowerCase())) { console.log(`Schon vorhanden: ${o.w}`); continue; }
   cards.push(o); added.push(o);
   const i = src.lastIndexOf("\n];");
