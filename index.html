@@ -3,446 +3,66 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>Karteikarten: Redemittel für Diskussionen</title>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Literata:opsz,wght@7..72,400;7..72,600;7..72,700&family=Noto+Naskh+Arabic:wght@400;600&display=swap" rel="stylesheet">
-<style>
-:root{
-  --bg:#DCE3EA; --paper:#FFFFFF; --ink:#1E2A4A; --muted:#5B6781;
-  --marker:#FF6FB5; --markerSoft:rgba(255,111,181,.45); --line:#C9D3DE;
-  --good:#1F7A5C; --again:#B4412F; --btn:#FFFFFF;
-  box-sizing:border-box;
-  padding-top:env(safe-area-inset-top,0px);
-  padding-bottom:env(safe-area-inset-bottom,0px);
-}
-@media (prefers-color-scheme: dark){
-  :root:not([data-theme="light"]){
-    --bg:#141A26; --paper:#1F2737; --ink:#EEF2F8; --muted:#A3AEC2;
-    --markerSoft:rgba(255,111,181,.38); --line:#323D52; --btn:#253047;
-    --good:#4CC39A; --again:#F08A76;
-  }
-}
-:root[data-theme="dark"]{
-  --bg:#141A26; --paper:#1F2737; --ink:#EEF2F8; --muted:#A3AEC2;
-  --markerSoft:rgba(255,111,181,.38); --line:#323D52; --btn:#253047;
-  --good:#4CC39A; --again:#F08A76;
-}
-*,*::before,*::after{box-sizing:border-box}
-html{scroll-padding-top:env(safe-area-inset-top,0px);height:100%}
-body{margin:0;min-height:100%;background:var(--bg);color:var(--ink);
-  font-family:"Literata",Georgia,"Times New Roman",serif;}
-main{max-width:560px;margin:0 auto;padding:20px 16px 28px;}
-h1{font-size:1.35rem;font-weight:700;margin:4px 0 2px;line-height:1.25}
-.sub{color:var(--muted);font-size:.9rem;margin:0 0 16px}
-.bar{display:flex;align-items:center;gap:10px;margin-bottom:12px;flex-wrap:wrap}
-.progress{flex:1;min-width:140px;height:8px;background:var(--line);border-radius:4px;overflow:hidden}
-.progress span{display:block;height:100%;background:var(--good);width:0;transition:width .3s}
-.count{font-size:.85rem;color:var(--muted);white-space:nowrap}
-.tools{display:flex;gap:8px;margin-bottom:14px;flex-wrap:wrap}
-button{font:inherit;cursor:pointer;border:1px solid var(--line);background:var(--btn);color:var(--ink);
-  border-radius:8px;padding:9px 13px;font-size:.9rem}
-button:focus-visible{outline:3px solid var(--marker);outline-offset:2px}
-button[aria-pressed="true"]{border-color:var(--ink);font-weight:600}
-
-.stage{perspective:1400px}
-.card{position:relative;width:100%;min-height:380px;transform-style:preserve-3d;
-  transition:transform .5s cubic-bezier(.3,.7,.2,1);cursor:pointer}
-.card.flipped{transform:rotateY(180deg)}
-.face{position:absolute;inset:0;backface-visibility:hidden;-webkit-backface-visibility:hidden;
-  background:var(--paper);border-radius:6px;padding:26px 22px 20px;
-  box-shadow:0 1px 0 var(--line), 0 10px 24px -14px rgba(20,30,60,.45);
-  /* index card ruling */
-  background-image:linear-gradient(var(--paper),var(--paper)),
-    repeating-linear-gradient(to bottom, transparent 0 31px, var(--line) 31px 32px);
-  background-size:100% 64px,100% 100%;background-repeat:no-repeat,repeat;
-  background-position:0 0,0 64px;
-  display:flex;flex-direction:column}
-.face::before{content:"";position:absolute;left:0;right:0;top:63px;height:2px;background:var(--marker);opacity:.55}
-.front{justify-content:center;align-items:center;text-align:center}
-.front .cat{position:absolute;top:22px;left:22px;right:22px;font-size:.8rem;color:var(--muted);text-align:left}
-.word{font-size:clamp(1.7rem,7vw,2.3rem);font-weight:700;line-height:1.3;margin:0}
-.word mark{background:linear-gradient(transparent 18%,var(--markerSoft) 18%,var(--markerSoft) 88%,transparent 88%);
-  color:inherit;padding:0 .12em;border-radius:3px;-webkit-box-decoration-break:clone;box-decoration-break:clone}
-.hint{margin-top:14px;color:var(--muted);font-size:.95rem}
-.tap{position:absolute;bottom:16px;left:0;right:0;text-align:center;font-size:.8rem;color:var(--muted)}
-.back{transform:rotateY(180deg);overflow:auto}
-.back .cat{font-size:.8rem;color:var(--muted);margin-bottom:26px}
-.back h2{font-size:1.15rem;margin:0 0 6px;line-height:1.3}
-.def{font-size:1rem;line-height:1.6;margin:0 0 14px}
-.ar{font-family:"Noto Naskh Arabic","Geeza Pro","Arial",sans-serif;direction:rtl;text-align:right;
-  font-size:1.2rem;line-height:1.7;margin:0 0 14px;padding:6px 10px;border-right:3px solid var(--marker)}
-.ex{font-style:italic;line-height:1.6;margin:0;font-size:.98rem}
-.ex b{font-style:normal;font-weight:600}
-.note{margin-top:12px;font-size:.85rem;color:var(--muted);line-height:1.5}
-
-.nav{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:16px}
-.nav .again{border-color:var(--again);color:var(--again);font-weight:600;padding:13px}
-.nav .good{background:var(--good);border-color:var(--good);color:#fff;font-weight:600;padding:13px}
-.small-nav{display:flex;justify-content:space-between;margin-top:10px}
-.small-nav button{border:none;background:none;color:var(--muted);padding:6px 4px}
-.done{text-align:center;padding:40px 10px}
-.done p{color:var(--muted)}
-@media (prefers-reduced-motion: reduce){.card{transition:none}}
-.speak{display:inline-flex;align-items:center;gap:6px;padding:6px 11px;font-size:.85rem;border-radius:999px;
-  border:1px solid var(--marker);background:transparent;color:var(--ink)}
-.speak svg{width:16px;height:16px;flex:none}
-.speak.playing{background:var(--markerSoft)}
-.front .speak{margin-top:18px}
-.row{display:flex;align-items:flex-start;justify-content:space-between;gap:10px}
-.row .speak{flex:none;margin-top:0}
-.ex-row{margin-top:2px}
-body.nospeech .speak{display:none}
-#printView{display:none}
-body.printing #app{display:none}
-body.printing #printView{display:block}
-.pv-actions{display:flex;gap:8px;flex-wrap:wrap;margin:0 0 16px}
-.pv-actions .primary{background:var(--ink);color:var(--paper);border-color:var(--ink);font-weight:600}
-.pv-msg{font-size:.85rem;color:var(--muted);margin:-8px 0 14px;min-height:1em}
-.pv-cat{font-weight:700;font-size:1rem;margin:20px 0 6px;padding-bottom:4px;border-bottom:2px solid var(--marker)}
-.pv-item{background:var(--paper);border:1px solid var(--line);border-radius:6px;padding:10px 12px;margin-bottom:8px;break-inside:avoid}
-.pv-top{display:flex;justify-content:space-between;gap:10px;align-items:baseline;flex-wrap:wrap}
-.pv-w{font-weight:700}
-.pv-w mark{background:var(--markerSoft);color:inherit;padding:0 .1em;border-radius:2px}
-.pv-h{font-size:.8rem;color:var(--muted)}
-.pv-d{font-size:.92rem;margin:4px 0}
-.pv-ar{font-family:"Noto Naskh Arabic","Geeza Pro",Arial,sans-serif;direction:rtl;text-align:right;font-size:1.05rem}
-.pv-ex{font-style:italic;font-size:.92rem;margin:4px 0 0}
-.pv-ex b{font-style:normal}
-.perf{font-size:.95rem;margin:0 0 12px}.perf b{font-weight:600}
-.pv-note{font-size:.8rem;color:var(--muted);margin-top:4px}
-@media print{
-  :root{--bg:#fff;--paper:#fff;--ink:#000;--muted:#444;--line:#bbb;padding:0}
-  body{background:#fff}
-  #app,.pv-actions,.pv-msg{display:none!important}
-  #printView{display:block!important}
-  main{max-width:none;padding:0}
-  .pv-item{border-color:#bbb}
-}
-</style>
+<title>DE: Karteikarten</title>
 <link rel="apple-touch-icon" href="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAALQAAAC0BAMAAADP4xsBAAAAGFBMVEX////+/v/789P/0gD/zgBpTknWAAAAAABm4oyZAAADMElEQVR42u3ZP28TMRgG8MdOMiGIXcGaHFcqVtryCRDslVDFzkdg4cvwDSLa7kgFxkqAytpQ1+1aFDtFTCg2Q/5fQ8/nu6PLe+Mp+cnxvX79+MLeoq6Lg2iiiSaaaKKJJppoookmmmiiiSY69mquuqkKM2kg3d8rTK+9SELok31ZmB7svQmg3b40hWnpD3by6X6EDMN+B1TIZx9TDv6OzqWdtVGlxo5z6ZGIq2I7yKWVj1whtr7VOKL2lNeesuvjOJoyNNdEE115WJg0d7FiqcmcJRhGe7O0r9o8Kpxm7OWsFR/7MyYsAPHgyXKT3osadWMeiTbU5rdzYQHw5Zzk4uYajisAPAEUTxs4n9zV8yDmIh/j6D22Af6nh23uVAoLC1z2Gjt6ngqTKNp7xbYBOAW1seUUf7YPWAxaAPBh/FAfJ7HFxwCASaCPHe3Wu9ZCjr8hWam69pZNa1CeauBi8xNg0Br/JAtAVLAazT0OuEe2joXODhPgors0TCbH1RJTfIvRqAkAmx8zq9X2K2hPdwG4h8PFW63dRMoKaKsBNLIHGG/KT4gHdwDadtZgZO5XA2m0AUCLaR41FuMqrIDOzN7a2rXpKUfPr91pn6qeVgElcDt7403XFws0Xx/VQXtTcYUs9Q80dS1z7b0xNqmQ7ix11ZGqZELYuDENFw+VrlfNqJlbMd+CVdH5RALgNFMl9sbOF0r/AsBd+/rAS9Mi0YD7nr17/7kQJWnmtwAk+tq+m5atECaGHQ3+Y7YTgDFZpofMI443rzTQeQdMI87k+T2IjThmGnHYRkcjPbF+FnECBh2Qr1u7QKqQ9g/adpavn04+FJlDGikU4HgCqNT1D4UBwNO8zSUwX89itPqq2GSRL4f3o9h8PZv2s+lh5rKX88YpMF8vVouZSIOqD3fmX4c7b0sf7gLOiXRGJ5rocklVVUZlpezrWhZPZ9tJM9tvfkbT2U3tfz5GYWujYyfbs1xaxtqitlELmU93RVR5XCX5qzEdxtBtGbA38q4u/lemv9oK2XbXoYsXWipCaLZefB2tep2zKiywlLYCookmmmiiiSaaaKKJJppoookm+pbpv6Sx8ErXWlGsAAAAAElFTkSuQmCC">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="DE: Karteikarten">
-<meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="theme-color" content="#DCE3EA">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Literata:opsz,wght@7..72,400;7..72,600;7..72,700&family=Noto+Naskh+Arabic:wght@400;600&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#DCE3EA;--paper:#FFFFFF;--ink:#1E2A4A;--muted:#5B6781;--line:#C9D3DE;--accent:#FF6FB5;
+  --der:#2D5F9E;--die:#B03F37;--das:#2F7A4E;--other:#8A6D1E;--ok:#1F7A5C;--again:#B4412F;
+  --ui:"Literata",Georgia,"Times New Roman",serif;--de:"Literata",Georgia,"Times New Roman",serif;--arf:"Noto Naskh Arabic","Geeza Pro",Arial,sans-serif}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#141A26;--paper:#1F2737;--ink:#EEF2F8;--muted:#A3AEC2;--line:#323D52;
+  --der:#7FAEE8;--die:#EE8A80;--das:#86C996;--other:#E0C06A;--ok:#4CC39A;--again:#F08A76}}
+:root[data-theme="dark"]{--bg:#141A26;--paper:#1F2737;--ink:#EEF2F8;--muted:#A3AEC2;--line:#323D52;
+  --der:#7FAEE8;--die:#EE8A80;--das:#86C996;--other:#E0C06A;--ok:#4CC39A;--again:#F08A76}
+</style>
+<link rel="stylesheet" href="app.css">
 </head>
 <body>
-<main>
- <div id="app">
-  <h1>Redemittel für Diskussionen</h1>
-  <p class="sub">Alle 34 Wörter aus deiner Liste. Tippe auf die Karte zum Umdrehen.</p>
-
-  <div class="bar">
-    <div class="progress" aria-hidden="true"><span id="prog"></span></div>
-    <div class="count" id="count"></div>
-  </div>
-
-  <div class="tools">
-    <button id="shuffle">Mischen</button>
-    <button id="onlyAgain" aria-pressed="false">Nur „Nochmal“-Karten</button>
-    <button id="toggleAr" aria-pressed="true">Arabisch zeigen</button>
-    <button id="reset">Zurücksetzen</button>
-    <button id="openPrint">Liste ausdrucken</button>
-    <button id="slow" aria-pressed="false">Langsam sprechen</button>
-  </div>
-
-  <div id="area"></div>
- </div>
- <div id="printView">
-  <h1>Redemittel für Diskussionen</h1>
-  <p class="sub">Alle Vokabeln mit Bedeutung und Beispielsatz.</p>
-  <div class="pv-actions">
-    <button class="primary" id="doPrint">Drucken</button>
-    <button id="doSave" hidden>Als Datei speichern</button>
-    <button id="closePrint">Zurück zu den Karten</button>
-  </div>
-  <p class="pv-msg" id="pvMsg"></p>
-  <div id="pvList"></div>
- </div>
-</main>
-
+<div class="wrap">
+  <header><h1>Redemittel</h1></header>
+  <main id="main"></main>
+</div>
+<div id="toast" hidden role="status"></div>
+<nav>
+  <button data-mode="learn">Lernen<span id="badge" hidden></span></button>
+  <button data-mode="quiz">der/die/das</button>
+  <button data-mode="list">Alle Wörter</button>
+  <button data-mode="settings">Einstellungen</button>
+</nav>
 <script>
-const CARDS = [
- {id:"bemerkung", cat:"Sich zu Wort melden", w:"die Bemerkung", hint:"Plural: die Bemerkungen",
-  def:"Ein kurzer Kommentar zu einem Thema.", ar:"ملاحظة، تعليق",
-  ex:"Ich würde gern eine kurze <b>Bemerkung</b> zu diesem Punkt machen."},
- {id:"entscheidende", cat:"Etwas betonen", w:"das Entscheidende", hint:"Nomen aus „entscheidend“",
-  def:"Das, was am Ende wirklich zählt; das Wichtigste.", ar:"الأهم، العامل الحاسم",
-  ex:"<b>Das Entscheidende</b> ist für mich, dass das Projekt pünktlich fertig wird."},
- {id:"unterstreichen", cat:"Etwas betonen", w:"unterstreichen", hint:"untrennbar", perf:"hat unterstrichen",
-  def:"Etwas verstärken oder bestätigen. Oft tun das Fakten oder Zahlen.", ar:"يُبرز، يؤكّد على",
-  ex:"Diese Zahlen <b>unterstreichen</b>, wie wichtig Tests sind."},
- {id:"erscheinen", cat:"Etwas betonen", w:"es erscheint mir …", hint:"erscheinen + Dativ", perf:"ist erschienen",
-  def:"Es kommt mir so vor, ich habe den Eindruck.", ar:"يبدو لي",
-  ex:"Es <b>erscheint</b> mir besonders wichtig, dass wir mehr testen.",
-  note:"Auf deinem Blatt steht „Er erscheint mir …“. Das ist wahrscheinlich ein Tippfehler, gemeint ist „Es erscheint mir …“."},
- {id:"betonen", cat:"Etwas betonen", w:"betonen", hint:"untrennbar (Vorsilbe be-)", perf:"hat betont",
-  def:"Mit Nachdruck sagen, dass etwas wichtig ist. Meist tut das eine Person.", ar:"يؤكّد، يشدّد على",
-  ex:"Ich kann nur immer wieder <b>betonen</b>, dass Tests wichtig sind."},
- {id:"anfuehren", cat:"Beispiele oder Belege anführen", w:"anführen", hint:"trennbar: ich führe … an", perf:"hat angeführt",
-  def:"Ein Beispiel oder einen Beweis nennen.", ar:"يذكر مثالاً أو دليلاً، يستشهد بـ",
-  ex:"Als Beleg <b>führe</b> ich die Zahlen vom letzten Jahr <b>an</b>."},
- {id:"beziehen", cat:"Beispiele oder Belege anführen", w:"sich beziehen auf", hint:"+ Akkusativ", perf:"hat sich bezogen",
-  def:"Sagen, worauf man sich stützt oder was man meint.", ar:"يستند إلى، يشير إلى",
-  ex:"Ich <b>beziehe mich</b> dabei auf unsere Vereinbarung vom Montag."},
- {id:"zurueckkommen", cat:"Auf Gesagtes zurückkommen", w:"zurückkommen auf", hint:"trennbar, + Akkusativ", perf:"ist zurückgekommen",
-  def:"Noch einmal über einen früheren Punkt sprechen.", ar:"يعود إلى نقطة سابقة",
-  ex:"Darf ich noch einmal auf Ihren Vorschlag <b>zurückkommen</b>?"},
- {id:"aufgreifen", cat:"Auf Gesagtes zurückkommen", w:"den Gedanken aufgreifen", hint:"trennbar: ich greife … auf", perf:"hat aufgegriffen",
-  def:"Die Idee einer anderen Person nehmen und weiterführen.", ar:"يتناول الفكرة ويبني عليها",
-  ex:"Ich würde gern <b>den Gedanken</b> von Frau Weber <b>aufgreifen</b>."},
- {id:"guertellinie", cat:"Sich gegen unfaire Angriffe wehren", w:"unter die Gürtellinie gehen", hint:"Redewendung", perf:"ist unter die Gürtellinie gegangen",
-  def:"Unfair und sehr persönlich verletzend sein.", ar:"ضربة تحت الحزام، كلام جارح وغير عادل",
-  ex:"Diese Bemerkung ging wirklich <b>unter die Gürtellinie</b>."},
- {id:"unterlassen", cat:"Sich gegen unfaire Angriffe wehren", w:"unterlassen", hint:"untrennbar, + Akkusativ", perf:"hat unterlassen",
-  def:"Etwas nicht (mehr) tun. Formeller als „aufhören“.", ar:"يمتنع عن، يكفّ عن",
-  ex:"Könnten Sie diese persönlichen Angriffe bitte <b>unterlassen</b>?"},
- {id:"verbitten", cat:"Sich gegen unfaire Angriffe wehren", w:"sich etwas verbitten", hint:"mir (Dativ) + etwas (Akk.)", perf:"hat sich verbeten",
-  def:"Sehr deutlich sagen, dass man etwas nicht akzeptiert.", ar:"يرفض بشدّة، لا يسمح بـ",
-  ex:"Ich <b>verbitte mir</b> diesen Ton!", note:"Klingt sehr bestimmt und formell."},
- {id:"unterstellung", cat:"Sich gegen unfaire Angriffe wehren", w:"die Unterstellung", hint:"Verb: unterstellen",
-  def:"Eine falsche, negative Behauptung über jemanden.", ar:"اتّهام باطل، افتراء",
-  ex:"Das ist eine <b>Unterstellung</b>, das habe ich nie gesagt!"},
- {id:"vergreifen", cat:"Sich gegen unfaire Angriffe wehren", w:"sich im Ton vergreifen", hint:"untrennbar", perf:"hat sich im Ton vergriffen",
-  def:"Unhöflich oder respektlos sprechen.", ar:"يتجاوز في كلامه، يسيء الأدب",
-  ex:"Jetzt <b>vergreifen</b> Sie <b>sich</b> aber wirklich <b>im Ton</b>."},
- {id:"zurwehr", cat:"Sich gegen unfaire Angriffe wehren", w:"sich zur Wehr setzen", hint:"gegen + Akkusativ", perf:"hat sich zur Wehr gesetzt",
-  def:"Sich aktiv verteidigen.", ar:"يدافع عن نفسه، يتصدّى لـ",
-  ex:"Ich <b>setze mich</b> gegen diese Vorwürfe <b>zur Wehr</b>."},
- {id:"wehren", cat:"Sich gegen eine Unterbrechung wehren", w:"sich wehren", hint:"gegen + Akkusativ", perf:"hat sich gewehrt",
-  def:"Sich verteidigen, etwas nicht einfach akzeptieren.", ar:"يقاوم، يدافع عن نفسه",
-  ex:"Er <b>wehrt sich</b> höflich gegen die Unterbrechung."},
-
- {id:"verschlimmern", cat:"Werkstatt und Alltag", w:"verschlimmern", hint:"regelmäßig", perf:"hat verschlimmert",
-  def:"Etwas schlechter machen, als es schon ist.", ar:"يزيد الأمر سوءاً",
-  ex:"Die Reparatur hat das Problem leider <b>verschlimmert</b>."},
- {id:"entschaedigung", cat:"Werkstatt und Alltag", w:"die Entschädigung", hint:"Verb: entschädigen",
-  def:"Geld oder Ausgleich für einen Schaden oder Nachteil.", ar:"تعويض",
-  ex:"Ich verlange eine <b>Entschädigung</b> für den Schaden an meinem Auto."},
- {id:"verlassenauf", cat:"Werkstatt und Alltag", w:"sich verlassen auf", hint:"+ Akkusativ", perf:"hat sich verlassen",
-  def:"Jemandem oder etwas vertrauen.", ar:"يعتمد على، يثق بـ",
-  ex:"Ich habe <b>mich</b> auf Ihre Zusage <b>verlassen</b>."},
- {id:"bestehen", cat:"Werkstatt und Alltag", w:"bestehen auf", hint:"+ Dativ!", perf:"hat bestanden",
-  def:"Etwas fest fordern und nicht nachgeben.", ar:"يُصرّ على",
-  ex:"Ich <b>bestehe auf</b> einer schriftlichen Rechnung.",
-  note:"Achtung: „bestehen auf“ + Dativ, aber „sich verlassen auf“ + Akkusativ."},
- {id:"frist", cat:"Werkstatt und Alltag", w:"die Frist", hint:"Plural: die Fristen",
-  def:"Ein festgelegter Zeitraum, bis wann etwas passieren muss.", ar:"مهلة، موعد نهائي",
-  ex:"Die <b>Frist</b> für die Reparatur endet am Freitag."},
- {id:"abkuerzung", cat:"Werkstatt und Alltag", w:"die Abkürzung", hint:"Verb: abkürzen",
-  def:"1. Ein kürzerer Weg. 2. Eine kurze Form eines Wortes.", ar:"طريق مختصر، اختصار",
-  ex:"Wir nehmen eine <b>Abkürzung</b>. „Kfz“ ist die <b>Abkürzung</b> für Kraftfahrzeug."},
- {id:"zukunft", cat:"Werkstatt und Alltag", w:"in naher / ferner Zukunft", hint:"auch: in der näheren Zukunft",
-  def:"Bald / in langer Zeit.", ar:"في المستقبل القريب، في المستقبل البعيد",
-  ex:"In <b>naher Zukunft</b> brauche ich neue Reifen."},
- {id:"gegend", cat:"Werkstatt und Alltag", w:"die Gegend", hint:"Plural: die Gegenden",
-  def:"Ein Gebiet, eine Umgebung.", ar:"منطقة، ناحية",
-  ex:"Gibt es eine gute Werkstatt in der <b>Gegend</b>?"},
- {id:"ueberleben", cat:"Werkstatt und Alltag", w:"überleben", hint:"untrennbar", perf:"hat überlebt",
-  def:"Eine gefährliche Situation lebend oder heil überstehen.", ar:"ينجو، يبقى على قيد الحياة",
-  ex:"Der Motor hat den Unfall leider nicht <b>überlebt</b>."},
- {id:"stube", cat:"Werkstatt und Alltag", w:"die Stube", hint:"altmodisch / regional",
-  def:"Ein altes Wort für Wohnzimmer.", ar:"غرفة المعيشة",
-  ex:"Abends sitzt die Familie in der <b>Stube</b>."},
- {id:"schwachstelle", cat:"Werkstatt und Alltag", w:"die Schwachstelle", hint:"schwach + die Stelle",
-  def:"Der Teil, der am leichtesten kaputtgeht oder Probleme macht.", ar:"نقطة ضعف",
-  ex:"Die Bremsen sind die <b>Schwachstelle</b> dieses Modells."},
- {id:"ausruhen", cat:"Werkstatt und Alltag", w:"sich ausruhen", hint:"trennbar: ich ruhe mich aus", perf:"hat sich ausgeruht",
-  def:"Eine Pause machen, um wieder Kraft zu haben.", ar:"يستريح",
-  ex:"Nach dem Streit muss ich <b>mich</b> erst <b>ausruhen</b>."},
- {id:"verlassen", cat:"Werkstatt und Alltag", w:"verlassen", hint:"ohne „sich“, + Akkusativ", perf:"hat verlassen",
-  def:"Von einem Ort weggehen oder eine Person allein lassen.", ar:"يغادر، يترك",
-  ex:"Ich habe die Werkstatt wütend <b>verlassen</b>.",
-  note:"Nicht verwechseln mit „sich verlassen auf“ (vertrauen)."},
-
- {id:"empfindlich", cat:"Aus der Übung (Teambesprechung)", w:"empfindlich", hint:"Adjektiv, Nomen: die Empfindlichkeit",
-  def:"Man fühlt sich schnell verletzt oder beleidigt. Auch: reagiert stark (z. B. empfindliche Haut).", ar:"حسّاس، سريع التأثّر",
-  ex:"Markus sagt: „Du bist immer so <b>empfindlich</b>.“",
-  note:"Kommt vom Verb „empfinden“."},
- {id:"empfinden", cat:"Aus der Übung (Teambesprechung)", w:"empfinden", hint:"etwas als … empfinden, unregelmäßig", perf:"hat empfunden",
-  def:"Etwas fühlen oder auf eine bestimmte Art wahrnehmen.", ar:"يشعر بـ، يعتبر",
-  ex:"Ich <b>empfinde</b> diese Bemerkung als unfair."},
- {id:"absichtlich", cat:"Aus der Übung (Teambesprechung)", w:"absichtlich", hint:"Gegenteil: unabsichtlich, aus Versehen",
-  def:"Mit Plan, nicht zufällig.", ar:"عن قصد، متعمَّد",
-  ex:"Du hast den Bug doch <b>absichtlich</b> übersehen!",
-  note:"Kommt direkt vom Nomen „die Absicht“. Das passende Verb ist „beabsichtigen“."},
- {id:"beabsichtigen", cat:"Aus der Übung (Teambesprechung)", w:"beabsichtigen", hint:"untrennbar (Vorsilbe be-), + zu + Infinitiv", perf:"hat beabsichtigt",
-  def:"Etwas vorhaben, planen. Formeller als „vorhaben“.", ar:"ينوي، يقصد",
-  ex:"Ich <b>beabsichtige</b>, mit dem Teamleiter zu sprechen."},
- {id:"uebersehen", cat:"Aus der Übung (Teambesprechung)", w:"übersehen", hint:"untrennbar: ich übersehe", perf:"hat übersehen",
-  def:"Etwas nicht bemerken, obwohl man es sehen könnte.", ar:"يغفل عن، لا يلاحظ",
-  ex:"Ich habe den Fehler leider <b>übersehen</b>."}
-];
-
-const KEY = "kk-redemittel-known";
-let known = new Set();
-const SEED = ["schwachstelle", "ueberleben", "verschlimmern", "unterstellung", "bemerkung", "gegend", "zukunft", "unterstreichen", "entschaedigung", "zurwehr", "anfuehren", "aufgreifen", "verbitten", "unterlassen", "betonen", "erscheinen", "verlassenauf", "abkuerzung", "guertellinie", "wehren"];
-try { const s = localStorage.getItem(KEY); known = new Set(s ? JSON.parse(s) : SEED); } catch(e) { known = new Set(SEED); }
-let progressDoc = null;
-function save(){
-  try { localStorage.setItem(KEY, JSON.stringify([...known])); } catch(e) {}
-  if (progressDoc) progressDoc.set({known:[...known], updated: Date.now()}).catch(()=>{});
-}
-async function initSync(){
-  try{
-    if (!window.claude || !window.claude.use) return;
-    const [user, db] = await Promise.all([claude.use("user"), claude.use("db")]);
-    if (!user || !db) return;
-    const uid = await user.id();
-    if (!uid) return;
-    progressDoc = db.doc("data/users/" + uid + "/progress");
-    const snap = await progressDoc.get();
-    if (snap.exists){
-      const k = snap.data().known;
-      if (Array.isArray(k)){ known = new Set(k.filter(x=>CARDS.some(c=>c.id===x))); render(); }
-    } else if (known.size){ save(); }
-  }catch(e){}
-}
-
-let order = CARDS.map((_,i)=>i);
-let pos = 0, onlyAgain = false, showAr = true;
-const area = document.getElementById("area");
-
-function deck(){ return onlyAgain ? order.filter(i=>!known.has(CARDS[i].id)) : order; }
-
-function updateBar(){
-  const n = known.size, t = CARDS.length;
-  document.getElementById("prog").style.width = (n/t*100)+"%";
-  document.getElementById("count").textContent = n + " von " + t + " gewusst";
-}
-
-function render(){
-  updateBar();
-  const d = deck();
-  if (!d.length){
-    area.innerHTML = '<div class="done"><h2>Alle Karten gewusst!</h2><p>Sehr gut. Tippe auf „Zurücksetzen“, um neu anzufangen.</p></div>';
-    return;
-  }
-  if (pos >= d.length) pos = 0;
-  const c = CARDS[d[pos]];
-  area.innerHTML = `
-    <div class="stage">
-      <div class="card" id="card" tabindex="0" role="button" aria-label="Karte umdrehen">
-        <div class="face front">
-          <div class="cat">${c.cat}</div>
-          <p class="word"><mark>${c.w}</mark></p>
-          <div class="hint">${c.hint}</div>
-          <button class="speak" data-say="w"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M11 5 6 9H3v6h3l5 4z"/><path d="M15.5 8.5a5 5 0 0 1 0 7"/><path d="M18.5 5.5a9 9 0 0 1 0 13"/></svg> Anhören</button>
-          <div class="tap">Was bedeutet das? Tippen zum Umdrehen</div>
-        </div>
-        <div class="face back">
-          <div class="cat">${c.cat}</div>
-          <div class="row"><h2>${c.w}</h2><button class="speak" data-say="w" aria-label="Wort anhören"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M11 5 6 9H3v6h3l5 4z"/><path d="M15.5 8.5a5 5 0 0 1 0 7"/><path d="M18.5 5.5a9 9 0 0 1 0 13"/></svg></button></div>
-          <p class="def">${c.def}</p>
-          ${c.perf ? `<p class="perf">Perfekt: <b>${c.perf}</b></p>` : ""}
-          ${showAr ? `<p class="ar" lang="ar">${c.ar}</p>` : ""}
-          <div class="row ex-row"><p class="ex">${c.ex}</p><button class="speak" data-say="ex" aria-label="Beispiel anhören"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M11 5 6 9H3v6h3l5 4z"/><path d="M15.5 8.5a5 5 0 0 1 0 7"/><path d="M18.5 5.5a9 9 0 0 1 0 13"/></svg> Beispiel</button></div>
-          ${c.note ? `<p class="note">${c.note}</p>` : ""}
-        </div>
-      </div>
-    </div>
-    <div class="nav">
-      <button class="again" id="again">Nochmal</button>
-      <button class="good" id="good">Gewusst</button>
-    </div>
-    <div class="small-nav">
-      <button id="prev">Zurück</button>
-      <span class="count">Karte ${pos+1} / ${d.length}</span>
-      <button id="next">Weiter</button>
-    </div>`;
-  const card = document.getElementById("card");
-  card.querySelectorAll(".speak").forEach(b=>{
-    b.onclick = e=>{ e.stopPropagation(); speak(b.dataset.say==="ex" ? plain(c.ex) : spoken(c.w), b); };
-    b.onkeydown = e=>e.stopPropagation();
-  });
-  const flip = ()=>card.classList.toggle("flipped");
-  card.onclick = flip;
-  card.onkeydown = e=>{ if(e.key===" "||e.key==="Enter"){ e.preventDefault(); flip(); } };
-  document.getElementById("good").onclick = ()=>{ known.add(c.id); save(); if(!onlyAgain) pos++; render(); };
-  document.getElementById("again").onclick = ()=>{ known.delete(c.id); save(); pos++; render(); };
-  document.getElementById("next").onclick = ()=>{ pos = (pos+1)%d.length; render(); };
-  document.getElementById("prev").onclick = ()=>{ pos = (pos-1+d.length)%d.length; render(); };
-}
-
-document.getElementById("shuffle").onclick = ()=>{
-  for (let i=order.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); [order[i],order[j]]=[order[j],order[i]]; }
-  pos = 0; render();
-};
-const oa = document.getElementById("onlyAgain");
-oa.onclick = ()=>{ onlyAgain = !onlyAgain; oa.setAttribute("aria-pressed", onlyAgain); pos = 0; render(); };
-const ta = document.getElementById("toggleAr");
-ta.onclick = ()=>{ showAr = !showAr; ta.setAttribute("aria-pressed", showAr); render(); };
-document.getElementById("reset").onclick = ()=>{ known.clear(); save(); pos = 0; render(); };
-
-let slow = false;
-const canSpeak = "speechSynthesis" in window && "SpeechSynthesisUtterance" in window;
-if (!canSpeak) document.body.classList.add("nospeech");
-function plain(h){ const d=document.createElement("div"); d.innerHTML=h; return d.textContent; }
-function spoken(w){ return w.replace(/…/g,"").trim(); }
-function germanVoice(){
-  const vs = speechSynthesis.getVoices();
-  return vs.find(v=>/^de[-_]DE/i.test(v.lang)) || vs.find(v=>/^de/i.test(v.lang)) || null;
-}
-if (canSpeak){ try{ speechSynthesis.getVoices(); speechSynthesis.onvoiceschanged = ()=>{}; }catch(e){} }
-function speak(text, btn){
-  if (!canSpeak) return;
-  try{
-    speechSynthesis.cancel();
-    document.querySelectorAll(".speak.playing").forEach(x=>x.classList.remove("playing"));
-    const u = new SpeechSynthesisUtterance(text);
-    u.lang = "de-DE";
-    const v = germanVoice(); if (v) u.voice = v;
-    u.rate = slow ? 0.7 : 0.95;
-    if (btn){ btn.classList.add("playing"); u.onend = u.onerror = ()=>btn.classList.remove("playing"); }
-    speechSynthesis.speak(u);
-  }catch(e){}
-}
-const slowBtn = document.getElementById("slow");
-slowBtn.onclick = ()=>{ slow = !slow; slowBtn.setAttribute("aria-pressed", slow); };
-if (!canSpeak) slowBtn.hidden = true;
-
-function buildList(){
-  let html = "", last = "";
-  for (const c of CARDS){
-    if (c.cat !== last){ html += `<div class="pv-cat">${c.cat}</div>`; last = c.cat; }
-    html += `<div class="pv-item"><div class="pv-top"><span class="pv-w"><mark>${c.w}</mark></span><span class="pv-h">${c.hint}</span></div>
-      <p class="pv-d">${c.def}${c.perf?` <br><span class="pv-h">Perfekt: <b>${c.perf}</b></span>`:""}</p><p class="pv-ar" lang="ar">${c.ar}</p><p class="pv-ex">${c.ex}</p>${c.note?`<p class="pv-note">${c.note}</p>`:""}</div>`;
-  }
-  return html;
-}
-document.getElementById("pvList").innerHTML = buildList();
-document.getElementById("openPrint").onclick = ()=>{ document.body.classList.add("printing"); window.scrollTo(0,0); };
-document.getElementById("closePrint").onclick = ()=>{ document.body.classList.remove("printing"); };
-const msg = document.getElementById("pvMsg");
-document.getElementById("doPrint").onclick = ()=>{
-  msg.textContent = "";
-  try { window.print(); } catch(e) {}
-  setTimeout(()=>{ if(!msg.textContent) msg.textContent = "Wenn kein Druckdialog erscheint: Tippe auf „Als Datei speichern“ und drucke die Datei."; }, 1500);
-};
-let downloads = null;
-(async()=>{
-  try{
-    if (window.claude && window.claude.use){
-      downloads = await claude.use("downloads");
-      if (downloads) document.getElementById("doSave").hidden = false;
-    }
-  }catch(e){}
-})();
-document.getElementById("doSave").onclick = async ()=>{
-  if (!downloads) return;
-  const css = [...document.querySelectorAll("style")].map(x=>x.textContent).join("\n");
-  const doc = `<!DOCTYPE html><html lang="de"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Redemittel für Diskussionen</title><style>${css} :root{--bg:#fff;--paper:#fff;--ink:#1E2A4A} #printView{display:block}</style></head><body><main><div id="printView"><h1>Redemittel für Diskussionen</h1><p class="sub">Alle Vokabeln mit Bedeutung und Beispielsatz.</p>${buildList()}</div></main></body></html>`;
-  try{
-    await downloads.save({filename:"Redemittel-Vokabeln.html", data:doc});
-    msg.textContent = "Datei gespeichert. Öffne sie und drucke sie aus.";
-  }catch(e){
-    msg.textContent = e && e.code === "declined" ? "" : "Speichern ist hier gerade nicht möglich.";
+window.APP = {
+  repo: "amr-f-ramadan/de-karteikarten",
+  key: "kk-amr-v2",
+  newPerDay: 10,
+  migrate: function (p) {
+    var old = JSON.parse(localStorage.getItem("kk-redemittel-known") || "null") || ["schwachstelle","ueberleben","verschlimmern","unterstellung","bemerkung","gegend","zukunft","unterstreichen","entschaedigung","zurwehr","anfuehren","aufgreifen","verbitten","unterlassen","betonen","erscheinen","verlassenauf","abkuerzung","guertellinie","wehren"];
+    var now = Date.now(), d = new Date(); d.setHours(0,0,0,0);
+    old.forEach(function (id, i) { p.cards[id] = { b: 2, due: d.getTime() + (1 + i % 3) * 864e5, t: now, n: 1, w: 0 }; });
+  },
+  t: {
+    flip: "Karte umdrehen", show: "Bedeutung zeigen", again: "Nochmal", good: "Gewusst",
+    sayWord: "Wort anhören", sayEx: "Beispiel anhören", whatDe: "Wie heißt das auf Deutsch?",
+    left: "Noch {n} Karten", newCard: "neu", todayStat: "Heute: {d} zur Wiederholung, {f} neue Wörter",
+    doneTitle: "Für heute fertig", doneText: "Bis morgen sind {n} Karten wieder dran.", moreNew: "Weitere neue Wörter lernen",
+    artQ: "Welcher Artikel passt?", next: "Nächstes Wort", artStat: "Bei diesem Wort: {ok} richtig, {w} falsch", noNouns: "Keine Nomen in der Liste.",
+    listStat: "{a} von {t} Wörtern sitzen gut", level: "Stufe",
+    syncH: "Fortschritt synchronisieren", syncHelp: "Mit einem GitHub-Token wird dein Fortschritt im Repo gespeichert und ist auf allen Geräten gleich.",
+    tokenLabel: "GitHub-Token (Fine-grained, nur dieses Repo, Contents: Read and write)", saveToken: "Token speichern", tokenOk: "Verbunden, Fortschritt synchronisiert",
+    syncNow: "Jetzt synchronisieren", delToken: "Token entfernen",
+    st_local: "Nur auf diesem Gerät", st_syncing: "Synchronisiere …", st_ok: "Synchronisiert", st_error: "Sync fehlgeschlagen, später nochmal versuchen", st_badtoken: "Token ungültig oder abgelaufen",
+    backupH: "Sicherung", export: "Als Datei sichern", import: "Datei laden", imported: "Sicherung geladen", importFail: "Diese Datei passt nicht",
+    optsH: "Lernen", newPerDay: "Neue Wörter pro Tag", arFirst: "Arabisch zuerst zeigen", slow: "Langsamer sprechen",
+    resetH: "Zurücksetzen", reset: "Fortschritt löschen", resetQ: "Wirklich den ganzen Fortschritt löschen?"
   }
 };
-
-render();
-initSync();
 </script>
+<script src="cards.js"></script>
+<script src="app.js"></script>
 </body>
 </html>
