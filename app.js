@@ -3,7 +3,18 @@
 (function () {
   "use strict";
   const C = window.APP, CARDS = window.CARDS;
-  const T = k => (C.t[k] !== undefined ? C.t[k] : k);
+  const DEF = {
+    addH: "Neues Wort", addPh: "z. B. kündigen oder die Frist", gen: "Karte erstellen", genBusy: "Wird erstellt …",
+    regen: "Neu erstellen", saveCard: "Zur Liste hinzufügen", saving: "Wird gespeichert …", discard: "Verwerfen",
+    needKey: "Für automatische Karten zuerst unter Optionen einen Gemini-API-Key eintragen.",
+    needTok: "Zum Speichern wird der GitHub-Token gebraucht (Optionen).",
+    dup: "Dieses Wort ist schon in der Liste.", saved: "Gespeichert. In ein bis zwei Minuten ist es auch auf deinen anderen Geräten.",
+    genFail: "Karte konnte nicht erstellt werden", keyBad: "Gemini-Key ungültig", quota: "Tageslimit von Gemini erreicht, morgen wieder versuchen",
+    f_w: "Wort", f_g: "Artikel", f_hint: "Hinweis", f_perf: "Perfekt", f_ar: "Arabisch", f_def: "Erklärung", f_ex: "Beispiel", f_note: "Notiz",
+    gemH: "Gemini für neue Karten", gemHelp: "Mit einem kostenlosen Key aus Google AI Studio erstellt die App Karten für neue Wörter.",
+    gemLabel: "Gemini-API-Key", gemSave: "Key speichern", gemSet: "Gemini-Key ist gespeichert", gemDel: "Key entfernen", newCat: "Selbst hinzugefügt"
+  };
+  const T = k => (C.t[k] !== undefined ? C.t[k] : DEF[k] !== undefined ? DEF[k] : k);
   const ART = { der: "der", die: "die", das: "das", pl: "die", x: "" };
   const DAY = 864e5, INT = [0, 1, 3, 7, 14, 30, 60];
   const $ = s => document.querySelector(s);
@@ -83,7 +94,7 @@
   }
 
   /* ---------- Artikel-Quiz ---------- */
-  const nouns = CARDS.filter(c => c.g === "der" || c.g === "die" || c.g === "das");
+  let nouns = CARDS.filter(c => c.g === "der" || c.g === "die" || c.g === "das");
   let quiz = null;
   function pickQuiz() {
     if (!nouns.length) { quiz = null; return; }
@@ -205,6 +216,112 @@
     r.readAsText(f);
   }
 
+  /* ---------- Neue Wörter mit Gemini ---------- */
+  const GK = C.key + ":gemini";
+  let gkey = ""; try { gkey = localStorage.getItem(GK) || ""; } catch (e) {}
+  let add = { word: "", busy: false, card: null, msg: "" };
+  const MODELS = ["gemini-flash-latest", "gemini-2.5-flash", "gemini-2.0-flash"];
+  const PROMPT = w => `Du erstellst eine Lernkarte für einen arabischen Muttersprachler (Deutsch B1 bis B2).
+Wort oder Ausdruck: "${w}"
+Regeln:
+- w: das Wort in Grundform, bei Nomen OHNE Artikel.
+- g: "der", "die" oder "das" bei Nomen im Singular, "pl" bei Nomen nur im Plural, sonst "x".
+- hint: kurz, z. B. Pluralform bei Nomen, "trennbar: ich rufe … an" oder Präposition mit Kasus.
+- perf: nur bei Verben die Perfektform mit hat/ist, z. B. "hat gekündigt". Sonst leer.
+- ar: die Bedeutung auf Arabisch, kurz, zwei Varianten mit Komma getrennt wenn sinnvoll.
+- def: einfache deutsche Erklärung in einem Satz, B1-Niveau.
+- ex: ein natürlicher Beispielsatz aus dem Alltag oder Beruf, B1-Niveau; das Zielwort in <b>…</b>.
+- note: nur wenn es eine typische Falle gibt (Verwechslung, Kasus, falscher Freund), sonst leer.
+Keine Bindestriche als Gedankenstrich verwenden.`;
+  const SCHEMA = { type: "OBJECT", properties: {
+    w: { type: "STRING" }, g: { type: "STRING", enum: ["der", "die", "das", "pl", "x"] }, hint: { type: "STRING" },
+    perf: { type: "STRING" }, ar: { type: "STRING" }, def: { type: "STRING" }, ex: { type: "STRING" }, note: { type: "STRING" } },
+    required: ["w", "g", "hint", "ar", "def", "ex"] };
+  async function genCard(word) {
+    let last = "";
+    for (const m of MODELS) {
+      const r = await fetch("https://generativelanguage.googleapis.com/v1beta/models/" + m + ":generateContent", {
+        method: "POST", headers: { "Content-Type": "application/json", "x-goog-api-key": gkey },
+        body: JSON.stringify({ contents: [{ parts: [{ text: PROMPT(word) }] }], generationConfig: { responseMimeType: "application/json", responseSchema: SCHEMA, temperature: 0.4 } })
+      });
+      if (r.status === 404) { last = "404"; continue; }
+      if (r.status === 400 || r.status === 403) throw new Error("key");
+      if (r.status === 429) throw new Error("quota");
+      if (!r.ok) throw new Error(String(r.status));
+      const j = await r.json();
+      const txt = (((j.candidates || [])[0] || {}).content || {}).parts;
+      const card = JSON.parse(txt.map(p => p.text || "").join(""));
+      if (!card.w) throw new Error("leer");
+      return card;
+    }
+    throw new Error(last || "model");
+  }
+  const slug = w => w.toLowerCase().replace(/ä/g, "ae").replace(/ö/g, "oe").replace(/ü/g, "ue").replace(/ß/g, "ss").replace(/[^a-z0-9]/g, "").slice(0, 30) || "wort";
+  const exists = w => { const k = w.toLowerCase().replace(/^(der|die|das)\s+/, "").trim(); return CARDS.some(c => c.w.toLowerCase() === k); };
+  async function saveCard(card) {
+    const url = "https://api.github.com/repos/" + C.repo + "/contents/cards.js";
+    const h = { Authorization: "Bearer " + token, Accept: "application/vnd.github+json" };
+    for (let tries = 0; tries < 2; tries++) {
+      const g = await fetch(url + "?ref=main&t=" + Date.now(), { headers: h, cache: "no-store" });
+      if (!g.ok) throw new Error(String(g.status));
+      const j = await g.json(), src = b64dec(j.content);
+      let id = slug(card.w), n = 2;
+      while (src.includes('"id":"' + id + '"') || CARDS.some(c => c.id === id)) id = slug(card.w) + n++;
+      card.id = id;
+      const o = { id, g: card.g, w: card.w, cat: T("newCat"), hint: card.hint || "", ar: card.ar, def: card.def || "", ex: card.ex };
+      if (card.perf) o.perf = card.perf; if (card.note) o.note = card.note;
+      const i = src.lastIndexOf("\n];");
+      if (i < 0) throw new Error("format");
+      const out = src.slice(0, i) + ",\n " + JSON.stringify(o) + src.slice(i);
+      const p = await fetch(url, { method: "PUT", headers: h, body: JSON.stringify({ message: "Neues Wort: " + o.w, content: b64enc(out), sha: j.sha, branch: "main" }) });
+      if (p.status === 409 || p.status === 422) continue;
+      if (!p.ok) throw new Error(String(p.status));
+      return o;
+    }
+    throw new Error("409");
+  }
+  function readForm() {
+    const v = id => { const el = $("#" + id); return el ? el.value.trim() : ""; };
+    return { w: v("f_w"), g: v("f_g") || "x", hint: v("f_hint"), perf: v("f_perf"), ar: v("f_ar"), def: v("f_def"), ex: v("f_ex"), note: v("f_note") };
+  }
+  async function doGen() {
+    const el = $("#nw"); if (el) add.word = el.value.trim();
+    if (!add.word || add.busy) return;
+    if (!gkey) { add.msg = T("needKey"); render(); return; }
+    if (exists(add.word)) { add.msg = T("dup"); render(); return; }
+    add.busy = "gen"; add.msg = ""; render();
+    try { add.card = await genCard(add.word); }
+    catch (e) { const m = e.message; add.msg = m === "key" ? T("keyBad") : m === "quota" ? T("quota") : T("genFail") + " (" + m + ")"; }
+    add.busy = false; render();
+  }
+  async function doSave() {
+    if (add.busy) return;
+    const card = readForm(); add.card = card;
+    if (!card.w || !card.ar || !card.ex) return;
+    if (!token) { add.msg = T("needTok"); render(); return; }
+    add.busy = "save"; render();
+    try {
+      const o = await saveCard(card);
+      CARDS.push(o); nouns = CARDS.filter(c => c.g === "der" || c.g === "die" || c.g === "das");
+      add = { word: "", busy: false, card: null, msg: "" }; flash(T("saved"));
+      if (!cur) { buildQueue(); cur = queue.shift() || null; }
+    } catch (e) { add.busy = false; add.msg = T("genFail") + " (" + e.message + ")"; }
+    add.busy = false; render();
+  }
+  function renderAdd() {
+    const c = add.card, f = (id, val, big) => `<label class="fld">${T(id)}${big ? `<textarea id="${id}" rows="2">${esc(val || "")}</textarea>` : `<input id="${id}" value="${esc(val || "")}">`}</label>`;
+    const sel = c ? `<label class="fld">${T("f_g")}<select id="f_g">${["der", "die", "das", "pl", "x"].map(g => `<option value="${g}" ${c.g === g ? "selected" : ""}>${g === "x" ? "kein Artikel" : g === "pl" ? "die (Plural)" : g}</option>`).join("")}</select></label>` : "";
+    return `<section class="add">
+      <h2>${T("addH")}</h2>
+      <div class="addrow"><input id="nw" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="${esc(T("addPh"))}" value="${esc(add.word)}">
+      <button class="btn ok" data-act="gen" ${add.busy ? "disabled" : ""}>${add.busy === "gen" ? T("genBusy") : T("gen")}</button></div>
+      ${add.msg ? `<p class="addmsg">${esc(add.msg)}</p>` : ""}
+      ${c ? `<div class="preview">${f("f_w", c.w)}${sel}${f("f_hint", c.hint)}${f("f_perf", c.perf)}${f("f_ar", c.ar)}${f("f_def", c.def, 1)}${f("f_ex", c.ex, 1)}${f("f_note", c.note, 1)}
+        <div class="row2"><button class="btn" data-act="discard">${T("discard")}</button><button class="btn" data-act="gen">${T("regen")}</button></div>
+        <button class="btn ok wide" data-act="savecard" ${add.busy ? "disabled" : ""}>${add.busy === "save" ? T("saving") : T("saveCard")}</button></div>` : ""}
+    </section>`;
+  }
+
   /* ---------- Oberfläche ---------- */
   let mode = "learn", listOpen = null;
   function flash(msg) { const el = $("#toast"); el.textContent = msg; el.hidden = false; clearTimeout(el._t); el._t = setTimeout(() => (el.hidden = true), 2600); }
@@ -274,7 +391,7 @@
         ${open ? `<div class="detail"><p class="ar" lang="ar" dir="rtl">${esc(c.ar)}</p>${c.perf ? `<p class="perf de">Perfekt: <b>${esc(c.perf)}</b></p>` : ""}<p class="ex de">${c.ex}</p>${c.tr ? `<p class="tr" lang="ar" dir="rtl">${esc(c.tr)}</p>` : ""}</div>` : ""}</li>`;
     }).join("");
     const learned = CARDS.filter(c => P.cards[c.id] && P.cards[c.id].b >= 3).length;
-    return `<p class="meta">${T("listStat").replace("{a}", learned).replace("{t}", CARDS.length)}</p><ul class="list">${rows}</ul>`;
+    return `${renderAdd()}<p class="meta">${T("listStat").replace("{a}", learned).replace("{t}", CARDS.length)}</p><ul class="list">${rows}</ul>`;
   }
 
   function renderSettings() {
@@ -286,6 +403,12 @@
         ? `<div class="row2"><button class="btn" data-act="syncnow">${T("syncNow")}</button><button class="btn" data-act="deltoken">${T("delToken")}</button></div>`
         : `<label class="fld">${T("tokenLabel")}<input id="tok" type="password" autocomplete="off" spellcheck="false" placeholder="github_pat_…"></label>
            <button class="btn ok" data-act="savetoken">${T("saveToken")}</button>`}
+      <h2>${T("gemH")}</h2>
+      <p class="dim">${T("gemHelp")}</p>
+      ${gkey
+        ? `<p><span id="gemDot"></span> ${T("gemSet")}</p><button class="btn" data-act="delgem">${T("gemDel")}</button>`
+        : `<label class="fld">${T("gemLabel")}<input id="gem" type="password" autocomplete="off" spellcheck="false" placeholder="AIza…"></label>
+           <button class="btn ok" data-act="savegem">${T("gemSave")}</button>`}
       <h2>${T("backupH")}</h2>
       <div class="row2"><button class="btn" data-act="export">${T("export")}</button>
       <label class="btn filebtn">${T("import")}<input id="imp" type="file" accept="application/json,.json"></label></div>
@@ -328,6 +451,11 @@
     else if (act === "deltoken") { token = ""; sha = null; try { localStorage.removeItem(TK); } catch (x) {} setStatus("local"); render(); }
     else if (act === "syncnow") sync(true).then(() => flash(T("st_" + status)));
     else if (act === "export") exportFile();
+    else if (act === "gen") { const w = $("#nw"); if (w && add.card && !w.value.trim()) w.value = add.word; doGen(); }
+    else if (act === "savecard") doSave();
+    else if (act === "discard") { add = { word: "", busy: false, card: null, msg: "" }; render(); }
+    else if (act === "savegem") { const v = ($("#gem").value || "").trim(); if (!v) return; gkey = v; try { localStorage.setItem(GK, v); } catch (x) {} flash(T("gemSet")); render(); }
+    else if (act === "delgem") { gkey = ""; try { localStorage.removeItem(GK); } catch (x) {} render(); }
     else if (act === "reset") { if (confirm(T("resetQ"))) { P = Object.assign(emptyP(), { opts: P.opts }); changed(); buildQueue(); next(); } }
   });
   document.addEventListener("change", e => {
@@ -337,6 +465,7 @@
     else if (e.target.id === "slw") setOpt("slow", e.target.checked);
   });
   document.addEventListener("keydown", e => {
+    if (e.target.id === "nw" && e.key === "Enter") { e.preventDefault(); doGen(); return; }
     if (mode !== "learn" || !cur || /INPUT|TEXTAREA/.test(e.target.tagName)) return;
     if (e.key === " " || e.key === "Enter") { e.preventDefault(); flip(); }
     else if (flipped && (e.key === "1" || e.key === "ArrowLeft")) answer(false);

@@ -16,7 +16,7 @@ header h1{font-size:2rem;margin:0;font-weight:800;letter-spacing:-.02em}
 .new{display:inline-block;margin-inline-start:6px;padding:1px 9px;border-radius:999px;background:var(--glass-strong);border:1px solid var(--rim);color:var(--ink);font-size:.72rem;font-weight:600}
 
 /* Glasfläche */
-.card,.btn,.list li,nav,.settings section,#toast,.fld input{
+.card,.btn,.list li,nav,.add,#toast,.fld input,.fld textarea,.fld select,.addrow input{
   background:var(--glass);border:1px solid var(--rim);
   -webkit-backdrop-filter:blur(24px) saturate(170%);backdrop-filter:blur(24px) saturate(170%);
   box-shadow:inset 0 1px 0 var(--shine),0 10px 30px -12px var(--shadow)}
@@ -108,3 +108,15 @@ nav button:focus-visible{outline:3px solid var(--accent);outline-offset:-3px}
 #badge{position:absolute;top:2px;left:calc(50% + 6px);background:var(--again);color:#fff;border-radius:999px;font-size:.62rem;padding:0 6px;line-height:1.5;font-weight:700}
 #toast{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(96px + env(safe-area-inset-bottom,0px));color:var(--ink);padding:11px 16px;border-radius:16px;font-size:.9rem;z-index:6;max-width:90%}
 @media (prefers-reduced-motion:reduce){.btn{transition:none}}
+
+/* Neues Wort */
+.add{border-radius:24px;padding:14px;margin-bottom:16px}
+.add h2{font-size:.8rem;font-weight:600;color:var(--muted);margin:0 4px 10px}
+.addrow{display:flex;gap:8px}
+.addrow input{flex:1;min-width:0;font:inherit;font-family:var(--de);padding:13px 14px;border-radius:14px;color:var(--ink);outline:none}
+.addrow .btn{flex:none;padding:13px 14px}
+.addmsg{margin:10px 4px 0;font-size:.88rem;color:var(--muted)}
+.preview{margin-top:12px;display:flex;flex-direction:column;gap:2px}
+.fld textarea,.fld select{font:inherit;padding:12px 14px;border-radius:14px;color:var(--ink);outline:none;resize:vertical}
+.fld select{appearance:none;-webkit-appearance:none}
+.btn[disabled]{opacity:.6}
