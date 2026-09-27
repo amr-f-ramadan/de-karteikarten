@@ -12,7 +12,12 @@
     genFail: "Karte konnte nicht erstellt werden", keyBad: "Gemini-Key ungültig", quota: "Tageslimit von Gemini erreicht, morgen wieder versuchen",
     f_w: "Wort", f_g: "Artikel", f_hint: "Hinweis", f_perf: "Perfekt", f_ar: "Arabisch", f_def: "Erklärung", f_ex: "Beispiel", f_note: "Notiz",
     gemH: "Gemini für neue Karten", gemHelp: "Mit einem kostenlosen Key aus Google AI Studio erstellt die App Karten für neue Wörter.",
-    gemLabel: "Gemini-API-Key", gemSave: "Key speichern", gemSet: "Gemini-Key ist gespeichert", gemDel: "Key entfernen", newCat: "Selbst hinzugefügt"
+    gemLabel: "Gemini-API-Key", gemSave: "Key speichern", gemSet: "Gemini-Key ist gespeichert", gemDel: "Key entfernen", newCat: "Selbst hinzugefügt",
+    remH: "Tägliche Erinnerung", remHelp: "Die App meldet sich einmal am Tag, wenn Karten fällig sind. Funktioniert nur in der App vom Home-Bildschirm.",
+    remHour: "Uhrzeit", remOn: "Erinnerung einschalten", remSave: "Uhrzeit speichern", remOff: "Erinnerung ausschalten", remTest: "Test auf diesem Gerät",
+    remActive: "Erinnerung ist an, täglich um {h} Uhr", remInactive: "Erinnerung ist aus", remNoApp: "Öffne die App über das Symbol auf dem Home-Bildschirm, um Erinnerungen einzuschalten.",
+    remDenied: "Mitteilungen sind blockiert. In den iPhone-Einstellungen unter Mitteilungen für diese App erlauben.", remNeedTok: "Für Erinnerungen wird der GitHub-Token gebraucht.",
+    remDone: "Erinnerung gespeichert", remFail: "Erinnerung konnte nicht gespeichert werden", remTestBody: "So sieht die Erinnerung aus."
   };
   const T = k => (C.t[k] !== undefined ? C.t[k] : DEF[k] !== undefined ? DEF[k] : k);
   const ART = { der: "der", die: "die", das: "das", pl: "die", x: "" };
@@ -322,6 +327,69 @@ Keine Bindestriche als Gedankenstrich verwenden.`;
     </section>`;
   }
 
+  /* ---------- Erinnerungen ---------- */
+  const VAPID = "BFZuIFPCB6Xfxe7Zh8ldo_6S9V4jIi8IskNE2ptXS6XJiHVb48SpkilWmXUOH3jwDjE9rIsFhXYL3_iy9jeiLz8";
+  const RK = C.key + ":remind";
+  let rem = { on: false, hour: 19 }; try { rem = Object.assign(rem, JSON.parse(localStorage.getItem(RK) || "{}")); } catch (e) {}
+  let remBusy = false;
+  const standalone = () => (navigator.standalone === true) || (window.matchMedia && matchMedia("(display-mode: standalone)").matches);
+  const canPush = () => "serviceWorker" in navigator && "PushManager" in window && "Notification" in window;
+  if ("serviceWorker" in navigator) navigator.serviceWorker.register("sw.js").catch(() => {});
+  const u8 = b => { const p = "=".repeat((4 - b.length % 4) % 4), r = atob((b + p).replace(/-/g, "+").replace(/_/g, "/")); return Uint8Array.from(r, ch => ch.charCodeAt(0)); };
+  async function putProgressFile(path, obj) {
+    const url = "https://api.github.com/repos/" + C.repo + "/contents/" + path;
+    const h = { Authorization: "Bearer " + token, Accept: "application/vnd.github+json" };
+    for (let i = 0; i < 2; i++) {
+      const g = await fetch(url + "?ref=progress&t=" + Date.now(), { headers: h, cache: "no-store" });
+      const cur = g.ok ? (await g.json()).sha : null;
+      const body = { message: "Erinnerung", content: b64enc(JSON.stringify(obj)), branch: "progress" }; if (cur) body.sha = cur;
+      let r = await fetch(url, { method: "PUT", headers: h, body: JSON.stringify(body) });
+      if ((r.status === 404 || r.status === 422) && !cur && await makeBranch()) r = await fetch(url, { method: "PUT", headers: h, body: JSON.stringify(body) });
+      if (r.ok) return;
+      if (r.status !== 409) throw new Error(String(r.status));
+    }
+    throw new Error("409");
+  }
+  async function remEnable(on) {
+    if (remBusy) return;
+    if (!token) { flash(T("remNeedTok")); return; }
+    const hr = $("#remHour"); if (hr) rem.hour = parseInt(hr.value, 10);
+    remBusy = true; render();
+    try {
+      let sub = null;
+      if (on) {
+        const perm = await Notification.requestPermission();
+        if (perm !== "granted") throw new Error("denied");
+        const reg = await navigator.serviceWorker.ready;
+        sub = await reg.pushManager.getSubscription() || await reg.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: u8(VAPID) });
+      }
+      await putProgressFile("push.json", { enabled: on, hour: rem.hour, tz: Intl.DateTimeFormat().resolvedOptions().timeZone || "Europe/Berlin", sub: sub ? sub.toJSON() : null, updated: new Date().toISOString() });
+      rem.on = on; try { localStorage.setItem(RK, JSON.stringify(rem)); } catch (x) {}
+      flash(T("remDone"));
+    } catch (e) { flash(e.message === "denied" ? T("remDenied") : T("remFail") + " (" + e.message + ")"); }
+    remBusy = false; render();
+  }
+  async function remTest() {
+    try {
+      if (Notification.permission !== "granted" && await Notification.requestPermission() !== "granted") { flash(T("remDenied")); return; }
+      const reg = await navigator.serviceWorker.ready;
+      await reg.showNotification("DE: Karteikarten", { body: T("remTestBody"), tag: "test" });
+    } catch (e) { flash(T("remFail") + " (" + e.message + ")"); }
+  }
+  function renderRem() {
+    const hours = Array.from({ length: 24 }, (_, h) => `<option value="${h}" ${h === rem.hour ? "selected" : ""}>${String(h).padStart(2, "0")}:00</option>`).join("");
+    let body;
+    if (!canPush() || !standalone()) body = `<p class="dim">${T("remNoApp")}</p>`;
+    else body = `<p><span id="remDot" data-on="${rem.on}"></span> ${rem.on ? T("remActive").replace("{h}", String(rem.hour).padStart(2, "0") + ":00") : T("remInactive")}</p>
+      <label class="fld inline">${T("remHour")} <select id="remHour">${hours}</select></label>
+      <div class="row2">${rem.on
+        ? `<button class="btn" data-act="remon" ${remBusy ? "disabled" : ""}>${T("remSave")}</button><button class="btn" data-act="remoff" ${remBusy ? "disabled" : ""}>${T("remOff")}</button>`
+        : `<button class="btn ok" data-act="remon" ${remBusy ? "disabled" : ""}>${T("remOn")}</button>`}</div>
+      <button class="btn wide" data-act="remtest">${T("remTest")}</button>`;
+    return `<h2>${T("remH")}</h2><p class="dim">${T("remHelp")}</p>${body}`;
+  }
+  function badge(n) { try { if (navigator.setAppBadge) (n ? navigator.setAppBadge(n) : navigator.clearAppBadge()).catch(() => {}); } catch (e) {} }
+
   /* ---------- Oberfläche ---------- */
   let mode = "learn", listOpen = null;
   function flash(msg) { const el = $("#toast"); el.textContent = msg; el.hidden = false; clearTimeout(el._t); el._t = setTimeout(() => (el.hidden = true), 2600); }
@@ -403,6 +471,7 @@ Keine Bindestriche als Gedankenstrich verwenden.`;
         ? `<div class="row2"><button class="btn" data-act="syncnow">${T("syncNow")}</button><button class="btn" data-act="deltoken">${T("delToken")}</button></div>`
         : `<label class="fld">${T("tokenLabel")}<input id="tok" type="password" autocomplete="off" spellcheck="false" placeholder="github_pat_…"></label>
            <button class="btn ok" data-act="savetoken">${T("saveToken")}</button>`}
+      ${renderRem()}
       <h2>${T("gemH")}</h2>
       <p class="dim">${T("gemHelp")}</p>
       ${gkey
@@ -424,7 +493,8 @@ Keine Bindestriche als Gedankenstrich verwenden.`;
   function render() {
     document.querySelectorAll("nav button").forEach(b => b.setAttribute("aria-current", b.dataset.mode === mode ? "page" : "false"));
     const dueN = dueCards().length + freshCards().length;
-    const badge = $("#badge"); if (badge) { badge.textContent = dueN; badge.hidden = !dueN; }
+    const bd = $("#badge"); if (bd) { bd.textContent = dueN; bd.hidden = !dueN; }
+    badge(dueN);
     $("#main").innerHTML = mode === "learn" ? renderLearn() : mode === "quiz" ? renderQuiz() : mode === "list" ? renderList() : renderSettings();
     setStatus(status);
   }
@@ -453,6 +523,9 @@ Keine Bindestriche als Gedankenstrich verwenden.`;
     else if (act === "export") exportFile();
     else if (act === "gen") { const w = $("#nw"); if (w && add.card && !w.value.trim()) w.value = add.word; doGen(); }
     else if (act === "savecard") doSave();
+    else if (act === "remon") remEnable(true);
+    else if (act === "remoff") remEnable(false);
+    else if (act === "remtest") remTest();
     else if (act === "discard") { add = { word: "", busy: false, card: null, msg: "" }; render(); }
     else if (act === "savegem") { const v = ($("#gem").value || "").trim(); if (!v) return; gkey = v; try { localStorage.setItem(GK, v); } catch (x) {} flash(T("gemSet")); render(); }
     else if (act === "delgem") { gkey = ""; try { localStorage.removeItem(GK); } catch (x) {} render(); }

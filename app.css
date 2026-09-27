@@ -117,6 +117,8 @@ nav button:focus-visible{outline:3px solid var(--accent);outline-offset:-3px}
 .addrow .btn{flex:none;padding:13px 14px}
 .addmsg{margin:10px 4px 0;font-size:.88rem;color:var(--muted)}
 .preview{margin-top:12px;display:flex;flex-direction:column;gap:2px}
-.fld textarea,.fld select{font:inherit;padding:12px 14px;border-radius:14px;color:var(--ink);outline:none;resize:vertical}
+.fld textarea,.fld select,.fld.inline select{font:inherit;padding:12px 14px;border-radius:14px;color:var(--ink);outline:none;resize:vertical}
 .fld select{appearance:none;-webkit-appearance:none}
 .btn[disabled]{opacity:.6}
+#remDot{display:inline-block;width:10px;height:10px;border-radius:50%;background:var(--muted);vertical-align:middle}
+#remDot[data-on=true]{background:var(--ok);box-shadow:0 0 8px var(--ok)}
