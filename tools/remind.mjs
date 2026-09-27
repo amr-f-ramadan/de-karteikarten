@@ -1,18 +1,28 @@
-// Läuft stündlich in GitHub Actions. Schickt eine Erinnerung, wenn die eingestellte Stunde erreicht ist
-// und Karten fällig sind. Liest push.json und progress.json aus dem Branch "progress" und cards.js aus main.
+// Läuft alle 15 Minuten in GitHub Actions. Schickt einmal am Tag eine Erinnerung, sobald die eingestellte
+// Uhrzeit erreicht ist und Karten fällig sind. Liest push.json und progress.json aus dem Branch "progress"
+// und cards.js aus main. Merkt sich in sent.json (Branch "progress"), dass heute schon gesendet wurde.
 import { execSync } from "node:child_process";
 import { readFileSync } from "node:fs";
 import vm from "node:vm";
 import webpush from "web-push";
 
 const force = process.env.FORCE === "true";
-const git = f => { try { return execSync(`git show origin/progress:${f}`, { encoding: "utf8" }); } catch { return null; } };
+const git = f => { try { return execSync(`git show origin/progress:${f}`, { encoding: "utf8", stdio: ["ignore", "pipe", "ignore"] }); } catch { return null; } };
 const push = JSON.parse(git("push.json") || "null");
 if (!push || !push.enabled || !push.sub) { console.log("Keine Erinnerung eingerichtet."); process.exit(0); }
 
 const tz = push.tz || "Europe/Berlin";
-const hourNow = Number(new Intl.DateTimeFormat("en-GB", { timeZone: tz, hour: "2-digit", hour12: false }).format(new Date())) % 24;
-if (!force && hourNow !== Number(push.hour)) { console.log(`Jetzt ${hourNow} Uhr, Erinnerung um ${push.hour} Uhr.`); process.exit(0); }
+const parts0 = Object.fromEntries(new Intl.DateTimeFormat("en-GB", { timeZone: tz, hour: "2-digit", minute: "2-digit", hour12: false }).formatToParts(new Date()).map(p => [p.type, p.value]));
+const nowMin = (Number(parts0.hour) % 24) * 60 + Number(parts0.minute);
+const target = Number(push.hour) * 60 + Number(push.minute || 0);
+const today = new Intl.DateTimeFormat("en-CA", { timeZone: tz }).format(new Date());
+const sent = JSON.parse(git("sent.json") || "null");
+const pad = n => String(n).padStart(2, "0");
+const at = `${pad(Math.floor(target / 60))}:${pad(target % 60)}`;
+if (!force) {
+  if (sent && sent.d === today) { console.log("Heute schon gesendet."); process.exit(0); }
+  if (nowMin < target || nowMin - target > 120) { console.log(`Jetzt ${pad(Math.floor(nowMin / 60))}:${pad(nowMin % 60)}, Erinnerung um ${at}.`); process.exit(0); }
+}
 
 const ctx = { window: {} };
 vm.runInNewContext(readFileSync("cards.js", "utf8"), ctx);
@@ -20,7 +30,6 @@ const cards = ctx.window.CARDS || [];
 const P = JSON.parse(git("progress.json") || "null") || { cards: {}, newDay: {}, opts: {} };
 const now = Date.now();
 const due = cards.filter(c => P.cards[c.id] && P.cards[c.id].due <= now).length;
-const today = new Intl.DateTimeFormat("en-CA", { timeZone: tz }).format(new Date());
 const perDay = (P.opts && P.opts.newPerDay !== undefined) ? P.opts.newPerDay : 10;
 const doneNew = P.newDay && P.newDay.d === today ? P.newDay.n : 0;
 const fresh = Math.min(cards.filter(c => !P.cards[c.id]).length, Math.max(0, perDay - doneNew));
@@ -35,8 +44,18 @@ const msg = { title: "DE: Karteikarten", body: parts.join(", ") || "Test: Erinne
 console.log("Nachricht:", msg.body);
 try {
   await webpush.sendNotification(push.sub, JSON.stringify(msg));
-  console.log("Gesendet:", parts.join(", "));
+  console.log("Gesendet.");
 } catch (e) {
   console.error("Fehler beim Senden:", e.statusCode, e.body);
   process.exit(e.statusCode === 404 || e.statusCode === 410 ? 0 : 1);
+}
+
+// Merken, dass heute gesendet wurde (nicht beim Test)
+if (!force && process.env.GITHUB_TOKEN && process.env.GITHUB_REPOSITORY) {
+  const url = `https://api.github.com/repos/${process.env.GITHUB_REPOSITORY}/contents/sent.json`;
+  const h = { Authorization: `Bearer ${process.env.GITHUB_TOKEN}`, Accept: "application/vnd.github+json" };
+  const g = await fetch(url + "?ref=progress", { headers: h });
+  const shaOld = g.ok ? (await g.json()).sha : undefined;
+  const r = await fetch(url, { method: "PUT", headers: h, body: JSON.stringify({ message: "Erinnerung gesendet", branch: "progress", sha: shaOld, content: Buffer.from(JSON.stringify({ d: today })).toString("base64") }) });
+  console.log("sent.json:", r.status);
 }
