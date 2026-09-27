@@ -232,6 +232,9 @@
   let add = { word: "", busy: false, card: null, msg: "" };
   const MODELS = ["gemini-flash-lite-latest", "gemini-flash-latest", "gemini-2.5-flash-lite", "gemini-2.5-flash"];
   const famKey = c => c.fam || c.w.toLowerCase();
+  const plainDe = t => String(t || "").toLowerCase().replace(/ä/g, "a").replace(/ö/g, "o").replace(/ü/g, "u").replace(/ß/g, "ss");
+  const sameStem = (w, fam) => { const st = plainDe(fam).replace(/(end|ern|eln|en|n|e)$/, ""); return st.length >= 3 && plainDe(w).includes(st); };
+  const topicOf = list => { const n = {}; list.forEach(x => { if (x.cat) n[x.cat] = (n[x.cat] || 0) + 1; }); let best = null; for (const x of list) if (x.cat && (!best || n[x.cat] > n[best])) best = x.cat; return best; };
   const relatives = c => CARDS.filter(x => x !== c && famKey(x) === famKey(c));
   const famList = () => [...new Set(CARDS.map(famKey))].join(", ");
   const topicList = () => [...new Set(CARDS.map(c => c.cat).filter(Boolean))].join(", ");
@@ -248,7 +251,8 @@ Regeln:
 - note: nur wenn es eine typische Falle gibt (Verwechslung, Kasus, falscher Freund), sonst leer.
 - fam: das Stammwort der Wortfamilie, klein geschrieben, meist der Infinitiv des Verbs, sonst das Grundwort (z. B. "empfinden" für empfindlich, Empfindung und empfinden).
   Schon vorhandene Wortfamilien: ${famList()}.
-  Wenn das Wort wirklich zu einer davon gehört (gleicher Wortstamm, nicht nur gleiche Vorsilbe), nimm genau diesen Wert. Sonst ein neues Stammwort.
+  Wenn das Wort wirklich zu einer davon gehört, nimm genau diesen Wert. Sonst ein neues Stammwort.
+  Wichtig: Wortfamilie heißt gleicher Wortstamm in der Form (abwesend und Abwesenheit), NICHT ähnliche Bedeutung (abwesend und verlassen sind keine Familie) und NICHT nur gleiche Vorsilbe.
 - cat: das Thema der Karte auf Deutsch, ein bis drei Wörter.
   Schon vorhandene Themen: ${topicList()}.
   Nimm eines davon, wenn es inhaltlich passt. Nur wenn keines passt, erfinde ein neues, eher allgemeines Thema (z. B. "Arbeit", "Gesundheit", "Wohnen").
@@ -291,8 +295,9 @@ Keine Bindestriche als Gedankenstrich verwenden.`;
       card.id = id;
       const o = { id, g: card.g, w: card.w, cat: (card.cat || "").trim() || T("newCat"), hint: card.hint || "", ar: card.ar, def: card.def || "", ex: card.ex };
       if (card.perf) o.perf = card.perf; if (card.note) o.note = card.note; if (card.src) o.src = card.src;
-      if (card.fam && card.fam.trim().toLowerCase() !== o.w.toLowerCase()) o.fam = card.fam.trim().toLowerCase();
-      else if (card.fam) { const k = card.fam.trim().toLowerCase(); if (CARDS.some(x => famKey(x) === k)) o.fam = k; }
+      const fk = (card.fam || "").trim().toLowerCase();
+      if (fk && sameStem(o.w, fk) && (fk !== o.w.toLowerCase() || CARDS.some(x => famKey(x) === fk))) o.fam = fk;
+      if (o.fam) { const kin = CARDS.filter(x => famKey(x) === o.fam && x.cat); if (kin.length) o.cat = topicOf(kin); }
       const i = src.lastIndexOf("\n];");
       if (i < 0) throw new Error("format");
       const out = src.slice(0, i) + ",\n " + JSON.stringify(o) + src.slice(i);
@@ -588,7 +593,7 @@ Keine Bindestriche als Gedankenstrich verwenden.`;
     const topics = new Map();
     let famTopic = null;
     grouped().forEach(([c, sub, inFam]) => {
-      if (!sub) famTopic = c.cat || T("newCat");
+      if (!sub) famTopic = topicOf(CARDS.filter(x => famKey(x) === famKey(c))) || T("newCat");
       if (!topics.has(famTopic)) topics.set(famTopic, []);
       const s = P.cards[c.id], b = s ? s.b : -1;
       const dots = Array.from({ length: INT.length - 1 }, (_, i) => `<i class="${i < b ? "on" : ""}"></i>`).join("");
