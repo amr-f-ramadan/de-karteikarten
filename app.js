@@ -9,7 +9,7 @@
     needKey: "Für automatische Karten zuerst unter Optionen einen Gemini-API-Key eintragen.",
     needTok: "Zum Speichern wird der GitHub-Token gebraucht (Optionen).",
     dup: "Dieses Wort ist schon in der Liste.", saved: "Gespeichert. In ein bis zwei Minuten ist es auch auf deinen anderen Geräten.",
-    genFail: "Karte konnte nicht erstellt werden", keyBad: "Gemini-Key ungültig", quota: "Tageslimit von Gemini erreicht, morgen wieder versuchen",
+    genFail: "Karte konnte nicht erstellt werden", keyBad: "Gemini-Key ungültig", quota: "Tageslimit von Gemini erreicht, morgen wieder versuchen", overload: "Gemini ist gerade überlastet. In ein paar Minuten nochmal versuchen.",
     f_w: "Wort", f_g: "Artikel", f_hint: "Hinweis", f_perf: "Perfekt", f_ar: "Arabisch", f_def: "Erklärung", f_ex: "Beispiel", f_note: "Notiz",
     gemH: "Gemini für neue Karten", gemHelp: "Mit einem kostenlosen Key aus Google AI Studio erstellt die App Karten für neue Wörter.",
     gemLabel: "Gemini-API-Key", gemSave: "Key speichern", gemSet: "Gemini-Key ist gespeichert", gemDel: "Key entfernen", newCat: "Selbst hinzugefügt",
@@ -244,12 +244,13 @@ Keine Bindestriche als Gedankenstrich verwenden.`;
     required: ["w", "g", "hint", "ar", "def", "ex"] };
   async function genCard(word) {
     let last = "";
-    for (const m of MODELS) {
+    for (const m of MODELS.concat(MODELS)) {
       const r = await fetch("https://generativelanguage.googleapis.com/v1beta/models/" + m + ":generateContent", {
         method: "POST", headers: { "Content-Type": "application/json", "x-goog-api-key": gkey },
         body: JSON.stringify({ contents: [{ parts: [{ text: PROMPT(word) }] }], generationConfig: { responseMimeType: "application/json", responseSchema: SCHEMA, temperature: 0.4 } })
       });
-      if (r.status === 404) { last = "404"; continue; }
+      if (r.status === 404) { last = last || "404"; continue; }
+      if (r.status >= 500) { last = "busy"; await new Promise(res => setTimeout(res, 1200)); continue; }
       if (r.status === 400 || r.status === 403) throw new Error("key");
       if (r.status === 429) throw new Error("quota");
       if (!r.ok) throw new Error(String(r.status));
@@ -296,7 +297,7 @@ Keine Bindestriche als Gedankenstrich verwenden.`;
     if (exists(add.word)) { add.msg = T("dup"); render(); return; }
     add.busy = "gen"; add.msg = ""; render();
     try { add.card = await genCard(add.word); }
-    catch (e) { const m = e.message; add.msg = m === "key" ? T("keyBad") : m === "quota" ? T("quota") : T("genFail") + " (" + m + ")"; }
+    catch (e) { const m = e.message; add.msg = m === "key" ? T("keyBad") : m === "quota" ? T("quota") : m === "busy" ? T("overload") : T("genFail") + " (" + m + ")"; }
     add.busy = false; render();
   }
   async function doSave() {
