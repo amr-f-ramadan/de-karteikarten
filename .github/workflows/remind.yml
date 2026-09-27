@@ -1,13 +1,15 @@
 name: Erinnerung
 on:
   schedule:
-    - cron: "5 * * * *"
+    - cron: "*/15 * * * *"
   workflow_dispatch:
     inputs:
       force:
         description: "Sofort senden (Test)"
         type: boolean
         default: true
+permissions:
+  contents: write
 jobs:
   remind:
     runs-on: ubuntu-latest
@@ -22,6 +24,7 @@ jobs:
       - run: node tools/remind.mjs
         env:
           FORCE: ${{ github.event.inputs.force }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           VAPID_PUBLIC: BFZuIFPCB6Xfxe7Zh8ldo_6S9V4jIi8IskNE2ptXS6XJiHVb48SpkilWmXUOH3jwDjE9rIsFhXYL3_iy9jeiLz8
           VAPID_PRIVATE: ${{ secrets.VAPID_PRIVATE }}
           VAPID_SUBJECT: https://github.com/amr-f-ramadan/de-karteikarten
