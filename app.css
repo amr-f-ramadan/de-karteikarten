@@ -132,3 +132,7 @@ nav button:focus-visible{outline:3px solid var(--accent);outline-offset:-3px}
 .famchip{font:inherit;font-family:var(--de);font-size:.95rem;padding:5px 12px;border-radius:999px;border:1px solid var(--rim);background:var(--glass-strong);color:var(--ink);cursor:pointer}
 .list li.sub{margin-left:22px;margin-top:-4px}
 .list li.infam::after{content:"";position:absolute;left:0;top:0;bottom:0;width:3px;background:var(--g);opacity:.5}
+.search{width:100%;font:inherit;padding:12px 16px;border-radius:16px;color:var(--ink);outline:none;margin:2px 0 4px;background:var(--glass);border:1px solid var(--rim);-webkit-backdrop-filter:blur(24px);backdrop-filter:blur(24px);-webkit-appearance:none;appearance:none}
+.topic{margin-bottom:18px}
+.topic h3{display:flex;justify-content:space-between;align-items:center;margin:14px 8px 8px;font-size:.95rem;font-weight:700}
+.tcount{font-size:.75rem;font-weight:600;color:var(--muted);background:var(--glass-strong);border:1px solid var(--rim);border-radius:999px;padding:1px 9px}

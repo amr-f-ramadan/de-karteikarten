@@ -30,11 +30,14 @@ Regeln:
 - fam: das Stammwort der Wortfamilie, klein geschrieben, meist der Infinitiv des Verbs, sonst das Grundwort (z. B. "empfinden" für empfindlich, Empfindung und empfinden).
   Schon vorhandene Wortfamilien: ${[...new Set(cards.map(famKey))].join(", ")}.
   Wenn das Wort wirklich zu einer davon gehört (gleicher Wortstamm, nicht nur gleiche Vorsilbe), nimm genau diesen Wert. Sonst ein neues Stammwort.
+- cat: das Thema der Karte auf Deutsch, ein bis drei Wörter.
+  Schon vorhandene Themen: ${[...new Set(cards.map(c => c.cat).filter(Boolean))].join(", ")}.
+  Nimm eines davon, wenn es inhaltlich passt. Nur wenn keines passt, erfinde ein neues, eher allgemeines Thema (z. B. "Arbeit", "Gesundheit", "Wohnen").
 Keine Bindestriche als Gedankenstrich verwenden.`;
 const SCHEMA = { type: "OBJECT", properties: {
   w: { type: "STRING" }, g: { type: "STRING", enum: ["der", "die", "das", "pl", "x"] }, hint: { type: "STRING" },
-  perf: { type: "STRING" }, ar: { type: "STRING" }, def: { type: "STRING" }, ex: { type: "STRING" }, note: { type: "STRING" }, fam: { type: "STRING" } },
-  required: ["w", "g", "hint", "ar", "def", "ex", "fam"] };
+  perf: { type: "STRING" }, ar: { type: "STRING" }, def: { type: "STRING" }, ex: { type: "STRING" }, note: { type: "STRING" }, fam: { type: "STRING" }, cat: { type: "STRING" } },
+  required: ["w", "g", "hint", "ar", "def", "ex", "fam", "cat"] };
 async function gen(word) {
   for (const m of ["gemini-flash-lite-latest", "gemini-flash-latest", "gemini-2.5-flash-lite", "gemini-2.5-flash"]) {
     const r = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${m}:generateContent`, {
@@ -56,7 +59,7 @@ for (const [k, s] of todo) {
   if (!c || !c.w || !c.ar || !c.ex) { console.log(`Noch nicht möglich: ${s.w}`); continue; }
   let id = slug(c.w), n = 2;
   while (cards.some(x => x.id === id)) id = slug(c.w) + n++;
-  const o = { id, g: c.g, w: c.w, cat: "Selbst hinzugefügt", hint: c.hint || "", ar: c.ar, def: c.def || "", ex: c.ex, src: k };
+  const o = { id, g: c.g, w: c.w, cat: (c.cat || "").trim() || "Selbst hinzugefügt", hint: c.hint || "", ar: c.ar, def: c.def || "", ex: c.ex, src: k };
   if (c.perf) o.perf = c.perf; if (c.note) o.note = c.note;
   const fk = (c.fam || "").trim().toLowerCase();
   if (fk && (fk !== o.w.toLowerCase() || cards.some(x => famKey(x) === fk))) o.fam = fk;
