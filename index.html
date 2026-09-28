@@ -57,7 +57,7 @@ window.APP = {
   fields: ["w", "g", "hint", "perf", "ar", "def", "ex", "note", "fam", "cat"],
   rules: {
     intro: "Du erstellst eine Lernkarte für einen arabischen Muttersprachler (Deutsch B1 bis B2).",
-    w: "w: das Wort in Grundform, bei Nomen OHNE Artikel.",
+    w: "w: das deutsche Wort in Grundform, bei Nomen OHNE Artikel. Ist die Eingabe Arabisch oder Englisch, nimm das gebräuchlichste passende deutsche Wort und erstelle die Karte dafür.",
     g: "g: \"der\", \"die\" oder \"das\" bei Nomen im Singular, \"pl\" bei Nomen nur im Plural, sonst \"x\".",
     hint: "hint: kurz, z. B. Pluralform bei Nomen, \"trennbar: ich rufe … an\" oder Präposition mit Kasus.",
     perf: "perf: nur bei Verben die Perfektform mit hat/ist, z. B. \"hat gekündigt\". Sonst leer.",
@@ -89,7 +89,7 @@ window.APP = {
     backupH: "Sicherung", export: "Als Datei sichern", import: "Datei laden", imported: "Sicherung geladen", importFail: "Diese Datei passt nicht",
     optsH: "Lernen", newPerDay: "Neue Wörter pro Tag", arFirst: "Arabisch zuerst zeigen", slow: "Langsamer sprechen",
     resetH: "Zurücksetzen", reset: "Fortschritt löschen", resetQ: "Wirklich den ganzen Fortschritt löschen?",
-    addH: "Neues Wort", addPh: "z. B. kündigen oder die Frist", gen: "Karte erstellen", genBusy: "Wird erstellt …", regen: "Neu erstellen",
+    addH: "Neues Wort", addPh: "Deutsch, Englisch oder Arabisch", gen: "Karte erstellen", genBusy: "Wird erstellt …", regen: "Neu erstellen",
     saveCard: "Zur Liste hinzufügen", saving: "Wird gespeichert …", discard: "Verwerfen",
     needKey: "Für automatische Karten zuerst unter Optionen einen Gemini-API-Key eintragen.",
     needTok: "Zum Speichern wird der GitHub-Token gebraucht (Optionen).", dup: "Dieses Wort ist schon in der Liste.",
