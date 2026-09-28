@@ -10,6 +10,10 @@ on:
         default: true
 permissions:
   contents: write
+# One reminder job at a time: a run waiting for the exact minute must finish before the next one checks sent.json
+concurrency:
+  group: remind
+  cancel-in-progress: false
 jobs:
   remind:
     runs-on: ubuntu-latest
