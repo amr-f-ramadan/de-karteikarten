@@ -29,7 +29,7 @@
   --orb1:rgba(200,60,150,.45);--orb2:rgba(20,150,150,.4);--orb3:rgba(110,80,255,.45);
   --der:#7FAEFF;--die:#FF8A8F;--das:#6FE0A6;--other:#F0C46A;--ok:#34C27E;--again:#FF6B73}
 </style>
-<link rel="stylesheet" href="app.css">
+<link rel="stylesheet" href="/karteikarten-engine/app.css">
 </head>
 <body>
 <div class="wrap">
@@ -53,6 +53,28 @@ window.APP = {
     var now = Date.now(), d = new Date(); d.setHours(0,0,0,0);
     old.forEach(function (id, i) { p.cards[id] = { b: 2, due: d.getTime() + (1 + i % 3) * 864e5, t: now, n: 1, w: 0 }; });
   },
+  vapid: "BFZuIFPCB6Xfxe7Zh8ldo_6S9V4jIi8IskNE2ptXS6XJiHVb48SpkilWmXUOH3jwDjE9rIsFhXYL3_iy9jeiLz8",
+  fields: ["w", "g", "hint", "perf", "ar", "def", "ex", "note", "fam", "cat"],
+  rules: {
+    intro: "Du erstellst eine Lernkarte für einen arabischen Muttersprachler (Deutsch B1 bis B2).",
+    w: "w: das Wort in Grundform, bei Nomen OHNE Artikel.",
+    g: "g: \"der\", \"die\" oder \"das\" bei Nomen im Singular, \"pl\" bei Nomen nur im Plural, sonst \"x\".",
+    hint: "hint: kurz, z. B. Pluralform bei Nomen, \"trennbar: ich rufe … an\" oder Präposition mit Kasus.",
+    perf: "perf: nur bei Verben die Perfektform mit hat/ist, z. B. \"hat gekündigt\". Sonst leer.",
+    ar: "ar: die Bedeutung auf Arabisch, kurz, zwei Varianten mit Komma getrennt wenn sinnvoll.",
+    def: "def: einfache deutsche Erklärung in einem Satz, B1-Niveau.",
+    ex: "ex: ein natürlicher Beispielsatz aus dem Alltag oder Beruf, B1-Niveau; das Zielwort in <b>…</b>.",
+    note: "note: nur wenn es eine typische Falle gibt (Verwechslung, Kasus, falscher Freund), sonst leer.",
+    fam: "fam: das Stammwort der Wortfamilie, klein geschrieben, meist der Infinitiv des Verbs, sonst das Grundwort (z. B. \"empfinden\" für empfindlich, Empfindung und empfinden).\n  Schon vorhandene Wortfamilien: {fams}.\n  Wenn das Wort wirklich zu einer davon gehört, nimm genau diesen Wert. Sonst ein neues Stammwort.\n  Wichtig: Wortfamilie heißt gleicher Wortstamm in der Form (abwesend und Abwesenheit), NICHT ähnliche Bedeutung (abwesend und verlassen sind keine Familie) und NICHT nur gleiche Vorsilbe.",
+    cat: "cat: das Thema der Karte auf Deutsch, ein bis drei Wörter.\n  Schon vorhandene Themen: {topics}.\n  Nimm eines davon, wenn es inhaltlich passt. Nur wenn keines passt, erfinde ein neues, eher allgemeines Thema (z. B. \"Arbeit\", \"Gesundheit\", \"Wohnen\").",
+    end: "Keine Bindestriche als Gedankenstrich verwenden."
+  },
+  remind: {
+    due: function (n) { return n + " " + (n === 1 ? "Karte" : "Karten") + " zur Wiederholung"; },
+    fresh: function (n) { return n + " neue " + (n === 1 ? "Wort" : "Wörter"); },
+    body: function (parts) { return parts.join(", "); },
+    test: "Test: Erinnerungen funktionieren"
+  },
   t: {
     flip: "Karte umdrehen", show: "Bedeutung zeigen", again: "Nochmal", good: "Gewusst",
     sayWord: "Wort anhören", sayEx: "Beispiel anhören", whatDe: "Wie heißt das auf Deutsch?",
@@ -66,11 +88,34 @@ window.APP = {
     st_local: "Nur auf diesem Gerät", st_syncing: "Synchronisiere …", st_ok: "Synchronisiert", st_error: "Sync fehlgeschlagen, später nochmal versuchen", st_badtoken: "Token ungültig oder abgelaufen", st_noperm: "Token hat keine Schreibrechte (Contents: Read and write fehlt)",
     backupH: "Sicherung", export: "Als Datei sichern", import: "Datei laden", imported: "Sicherung geladen", importFail: "Diese Datei passt nicht",
     optsH: "Lernen", newPerDay: "Neue Wörter pro Tag", arFirst: "Arabisch zuerst zeigen", slow: "Langsamer sprechen",
-    resetH: "Zurücksetzen", reset: "Fortschritt löschen", resetQ: "Wirklich den ganzen Fortschritt löschen?"
+    resetH: "Zurücksetzen", reset: "Fortschritt löschen", resetQ: "Wirklich den ganzen Fortschritt löschen?",
+    addH: "Neues Wort", addPh: "z. B. kündigen oder die Frist", gen: "Karte erstellen", genBusy: "Wird erstellt …", regen: "Neu erstellen",
+    saveCard: "Zur Liste hinzufügen", saving: "Wird gespeichert …", discard: "Verwerfen",
+    needKey: "Für automatische Karten zuerst unter Optionen einen Gemini-API-Key eintragen.",
+    needTok: "Zum Speichern wird der GitHub-Token gebraucht (Optionen).", dup: "Dieses Wort ist schon in der Liste.",
+    saved: "Gespeichert. In ein bis zwei Minuten ist es auch auf deinen anderen Geräten.", genFail: "Karte konnte nicht erstellt werden",
+    keyBad: "Gemini-Key ungültig", quota: "Tageslimit von Gemini erreicht, morgen wieder versuchen",
+    overload: "Gemini ist gerade überlastet. In ein paar Minuten nochmal versuchen.", f_w: "Wort", f_g: "Artikel", f_hint: "Hinweis",
+    f_perf: "Perfekt", f_ar: "Arabisch", f_def: "Erklärung", f_ex: "Beispiel", f_tr: "Übersetzung des Beispiels", f_note: "Notiz",
+    gemH: "Gemini für neue Karten", gemHelp: "Mit einem kostenlosen Key aus Google AI Studio erstellt die App Karten für neue Wörter.",
+    gemLabel: "Gemini-API-Key", gemSave: "Key speichern", gemSet: "Gemini-Key ist gespeichert", gemDel: "Key entfernen", newCat: "Selbst hinzugefügt",
+    remH: "Tägliche Erinnerung",
+    remHelp: "Die App meldet sich einmal am Tag, wenn Karten fällig sind. Funktioniert nur in der App vom Home-Bildschirm.", remHour: "Uhrzeit",
+    remOn: "Erinnerung einschalten", remSave: "Uhrzeit speichern", remOff: "Erinnerung ausschalten", remTest: "Test auf diesem Gerät",
+    remActive: "Erinnerung ist an, täglich um {h} Uhr", remInactive: "Erinnerung ist aus",
+    remNoApp: "Öffne die App über das Symbol auf dem Home-Bildschirm, um Erinnerungen einzuschalten.",
+    remDenied: "Mitteilungen sind blockiert. In den iPhone-Einstellungen unter Mitteilungen für diese App erlauben.",
+    remNeedTok: "Für Erinnerungen wird der GitHub-Token gebraucht.", delCard: "Karte löschen", delQ: "„{w}“ wirklich aus der Liste löschen?",
+    deleted: "Gelöscht", delFail: "Löschen hat nicht geklappt",
+    queued: "Gemini antwortet gerade nicht. Das Wort steht auf der Warteliste und wird automatisch erstellt, sobald es wieder geht.",
+    famH: "Wortfamilie", f_fam: "Wortfamilie (Stammwort)", f_cat: "Thema", searchPh: "Suchen (Deutsch oder Arabisch)", noHits: "Nichts gefunden",
+    waitH: "Warteliste", waitRm: "Von der Warteliste nehmen", autoAdded: "Neue Karte aus der Warteliste: {w}", remDone: "Erinnerung gespeichert",
+    remFail: "Erinnerung konnte nicht gespeichert werden", remTestBody: "So sieht die Erinnerung aus.", g_x: "kein Artikel", g_pl: "die (Plural)",
+    perfL: "Perfekt:", appName: "DE: Karteikarten"
   }
 };
 </script>
 <script src="cards.js"></script>
-<script src="app.js"></script>
+<script src="/karteikarten-engine/app.js"></script>
 </body>
 </html>
