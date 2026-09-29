@@ -41,6 +41,7 @@
   <button data-mode="learn"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="6" width="14" height="14" rx="3"/><path d="M7 3h11a3 3 0 0 1 3 3v11"/></svg>Lernen<span id="badge" hidden></span></button>
   <button data-mode="quiz"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="5"/><circle cx="12" cy="12" r="1.5"/></svg>der/die/das</button>
   <button data-mode="list"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6h11M9 12h11M9 18h11"/><circle cx="4.5" cy="6" r="1"/><circle cx="4.5" cy="12" r="1"/><circle cx="4.5" cy="18" r="1"/></svg>Wörter</button>
+  <button data-mode="practice"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 5h16v11H9l-5 4z"/><path d="M8 9.5h8M8 12.5h5"/></svg>Sprechen</button>
   <button data-mode="settings"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h10M18 7h2M4 17h4M12 17h8"/><circle cx="16" cy="7" r="2"/><circle cx="10" cy="17" r="2"/></svg>Optionen</button>
 </nav>
 <script>
@@ -68,6 +69,10 @@ window.APP = {
     fam: "fam: das Stammwort der Wortfamilie, klein geschrieben, meist der Infinitiv des Verbs, sonst das Grundwort (z. B. \"empfinden\" für empfindlich, Empfindung und empfinden).\n  Schon vorhandene Wortfamilien: {fams}.\n  Wenn das Wort wirklich zu einer davon gehört, nimm genau diesen Wert. Sonst ein neues Stammwort.\n  Wichtig: Wortfamilie heißt gleicher Wortstamm in der Form (abwesend und Abwesenheit), NICHT ähnliche Bedeutung (abwesend und verlassen sind keine Familie) und NICHT nur gleiche Vorsilbe.",
     cat: "cat: das Thema der Karte auf Deutsch, ein bis drei Wörter.\n  Schon vorhandene Themen: {topics}.\n  Nimm eines davon, wenn es inhaltlich passt. Nur wenn keines passt, erfinde ein neues, eher allgemeines Thema (z. B. \"Arbeit\", \"Gesundheit\", \"Wohnen\").",
     end: "Keine Bindestriche als Gedankenstrich verwenden."
+  },
+  practice: {
+    task: "Du bist Deutschlehrer. Dein Schüler ist arabischer Muttersprachler (Deutsch B1 bis B2): Er versteht viele Wörter, kann sie aber im Gespräch nicht spontan benutzen.\nErfinde eine kurze, konkrete Situation aus Alltag oder Beruf (Thema: {topic}), in der er auf Deutsch etwas sagen muss und dabei diese Wörter natürlich benutzen kann: {words}.\n- task: die Situation und was er sagen soll, auf Deutsch, ein bis zwei Sätze, in der Du-Form. Nenne die Zielwörter nicht.\n- starter: ein möglicher Satzanfang auf Deutsch, drei bis sechs Wörter, ohne die Zielwörter.\nKeine Bindestriche als Gedankenstrich verwenden.",
+    feedback: "Du bist ein freundlicher Deutschlehrer. Aufgabe: \"{task}\". Zielwörter: {words}. Antwort des Schülers: \"{answer}\".\n- correct: true, wenn die Antwort grammatisch richtig ist und zur Aufgabe passt.\n- corrected: seine Antwort mit so wenigen Änderungen wie möglich korrigiert.\n- natural: wie ein Muttersprachler es flüssig sagen würde, ein bis zwei Sätze, mit den Zielwörtern.\n- tips: höchstens zwei sehr kurze Erklärungen der wichtigsten Fehler, auf Deutsch; leer, wenn alles stimmt.\n- used: die Zielwörter, die er richtig benutzt hat, genau wie in der Liste.\n- chunks: bis zu drei nützliche feste Wendungen aus natural (drei bis sechs Wörter), die er lernen sollte.\nKeine Bindestriche als Gedankenstrich verwenden."
   },
   remind: {
     due: function (n) { return n + " " + (n === 1 ? "Karte" : "Karten") + " zur Wiederholung"; },
@@ -111,7 +116,13 @@ window.APP = {
     famH: "Wortfamilie", f_fam: "Wortfamilie (Stammwort)", f_cat: "Thema", searchPh: "Suchen (Deutsch oder Arabisch)", noHits: "Nichts gefunden",
     waitH: "Warteliste", waitRm: "Von der Warteliste nehmen", autoAdded: "Neue Karte aus der Warteliste: {w}", remDone: "Erinnerung gespeichert",
     remFail: "Erinnerung konnte nicht gespeichert werden", remTestBody: "So sieht die Erinnerung aus.", g_x: "kein Artikel", g_pl: "die (Plural)",
-    perfL: "Perfekt:", appName: "DE: Karteikarten"
+    perfL: "Perfekt:", appName: "DE: Karteikarten",
+    sayDe: "Sag es auf Deutsch, in einem ganzen Satz", prodAuto: "Bekannte Wörter: Bedeutung zuerst, selbst auf Deutsch sagen",
+    prIntro: "Gemini gibt dir eine Situation. Antworte auf Deutsch, getippt oder diktiert (Mikrofon auf der Tastatur), und sag es dabei laut.",
+    prStart: "Aufgabe starten", prNext: "Nächste Aufgabe", prCheck: "Prüfen", prBusy: "Einen Moment …", prPh: "Deine Antwort auf Deutsch",
+    prWords: "Benutze diese Wörter", prGood: "Richtig!", prCorrected: "Korrigiert", prNatural: "So klingt es natürlich", prTips: "Tipps",
+    prUsed: "Zielwörter", prChunks: "Nützliche Wendungen, mit + als Karte speichern", prAdd: "Als Karte hinzufügen",
+    prAdded: "Kommt auf die Warteliste und wird gleich zur Karte", prFail: "Gemini antwortet gerade nicht, bitte gleich nochmal versuchen"
   }
 };
 </script>
