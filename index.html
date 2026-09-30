@@ -71,6 +71,20 @@ window.APP = {
     cat: "cat: das Thema der Karte auf Deutsch, ein bis drei Wörter.\n  Schon vorhandene Themen: {topics}.\n  Nimm eines davon, wenn es inhaltlich passt. Nur wenn keines passt, erfinde ein neues, eher allgemeines Thema (z. B. \"Arbeit\", \"Gesundheit\", \"Wohnen\").",
     end: "Keine Bindestriche als Gedankenstrich verwenden."
   },
+  phrases: {
+    perDay: 3,
+    fields: ["w", "ar", "ex", "note", "cat"],
+    rules: {
+      intro: "Du erstellst eine Lernkarte für eine feste Wendung (Redemittel, Satzanfang oder Füllwort) für einen arabischen Muttersprachler (Deutsch B1 bis B2), der im Gespräch flüssiger sprechen will.",
+      w: "w: die Wendung auf Deutsch, so wie man sie im Gespräch sagt; wo der Satz weitergeht, steht … (z. B. \"Ich möchte betonen, dass …\"). Ist die Eingabe Arabisch oder Englisch, nimm die gebräuchlichste passende deutsche Wendung.",
+      ar: "ar: die Bedeutung auf Arabisch, kurz.",
+      ex: "ex: ein natürlicher Beispielsatz aus einem Gespräch in Alltag oder Beruf, B1 bis B2; die Wendung in <b>…</b>.",
+      note: "note: kurz, wann man sie benutzt (z. B. formell oder locker, im Meeting, am Telefon); leer, wenn es nichts Besonderes gibt.",
+      cat: "cat: wofür man die Wendung benutzt, auf Deutsch, zwei bis vier Wörter (z. B. \"Meinung sagen\", \"Zeit gewinnen\", \"höflich widersprechen\").\n  Schon vorhandene Gruppen: {groups}.\n  Nimm eine davon, wenn sie passt. Sonst eine neue.",
+      end: "Keine Bindestriche als Gedankenstrich verwenden."
+    },
+    starter: "Erstelle einen Grundstock von 30 sehr häufigen deutschen Wendungen für Gespräche in Alltag und Beruf, für einen arabischen Muttersprachler (Deutsch B1 bis B2), der viele Wörter kennt, aber im Gespräch nicht flüssig ist. Je drei bis vier Wendungen für diese Gruppen: Gespräch beginnen, Meinung sagen, zustimmen, höflich widersprechen, Zeit gewinnen (Füllwörter wie \"Also, …\" oder \"Wie soll ich sagen …\"), nachfragen, etwas betonen, Thema wechseln, Gespräch beenden. Antworte mit einer Liste von Karten."
+  },
   practice: {
     task: "Du bist Deutschlehrer. Dein Schüler ist arabischer Muttersprachler (Deutsch B1 bis B2): Er versteht viele Wörter, kann sie aber im Gespräch nicht spontan benutzen.\nErfinde eine kurze, konkrete Situation aus Alltag oder Beruf (Thema: {topic}), in der er auf Deutsch etwas sagen muss und dabei diese Wörter natürlich benutzen kann: {words}.\n- task: die Situation und was er sagen soll, auf Deutsch, ein bis zwei Sätze, in der Du-Form. Nenne die Zielwörter nicht.\n- starter: ein möglicher Satzanfang auf Deutsch, drei bis sechs Wörter, ohne die Zielwörter.\nKeine Bindestriche als Gedankenstrich verwenden.",
     feedback: "Du bist ein freundlicher Deutschlehrer. Aufgabe: \"{task}\". Zielwörter: {words}. Antwort des Schülers: \"{answer}\".\n- correct: true, wenn die Antwort grammatisch richtig ist und zur Aufgabe passt.\n- corrected: seine Antwort mit so wenigen Änderungen wie möglich korrigiert.\n- natural: wie ein Muttersprachler es flüssig sagen würde, ein bis zwei Sätze, mit den Zielwörtern.\n- tips: höchstens zwei sehr kurze Erklärungen der wichtigsten Fehler, auf Deutsch; leer, wenn alles stimmt.\n- used: die Zielwörter, die er richtig benutzt hat, genau wie in der Liste.\n- chunks: bis zu drei nützliche feste Wendungen aus natural (drei bis sechs Wörter), die er lernen sollte.\nKeine Bindestriche als Gedankenstrich verwenden."
@@ -78,6 +92,7 @@ window.APP = {
   remind: {
     due: function (n) { return n + " " + (n === 1 ? "Karte" : "Karten") + " zur Wiederholung"; },
     fresh: function (n) { return n + " neue " + (n === 1 ? "Wort" : "Wörter"); },
+    freshP: function (n) { return n + " neue " + (n === 1 ? "Wendung" : "Wendungen"); },
     body: function (parts) { return parts.join(", "); },
     test: "Test: Erinnerungen funktionieren"
   },
@@ -122,8 +137,14 @@ window.APP = {
     prIntro: "Gemini gibt dir eine Situation. Antworte auf Deutsch, getippt oder diktiert (Mikrofon auf der Tastatur), und sag es dabei laut.",
     prStart: "Aufgabe starten", prNext: "Nächste Aufgabe", prCheck: "Prüfen", prBusy: "Einen Moment …", prPh: "Deine Antwort auf Deutsch",
     prWords: "Benutze diese Wörter", prGood: "Richtig!", prCorrected: "Korrigiert", prNatural: "So klingt es natürlich", prTips: "Tipps",
-    prUsed: "Zielwörter", prChunks: "Nützliche Wendungen, mit + als Karte speichern", prAdd: "Als Karte hinzufügen",
-    prAdded: "Kommt auf die Warteliste und wird gleich zur Karte", prFail: "Gemini antwortet gerade nicht, bitte gleich nochmal versuchen"
+    prUsed: "Zielwörter", prChunks: "Nützliche Wendungen, mit + zu deinen Wendungen", prAdd: "Zu den Wendungen hinzufügen",
+    prAdded: "Kommt zu deinen Wendungen, gleich fertig", prFail: "Gemini antwortet gerade nicht, bitte gleich nochmal versuchen",
+    segW: "Wörter", segP: "Wendungen", phTag: "Wendung", sayPh: "Sag die Wendung auf Deutsch", phAddH: "Neue Wendung", phAddPh: "Deutsch, Englisch oder Arabisch",
+    phF_w: "Wendung", phF_cat: "Wofür", phSay: "Anhören", phNewCat: "Selbst hinzugefügt", phDup: "Diese Wendung ist schon in der Liste.",
+    phQueued: "Gemini antwortet gerade nicht. Die Wendung steht auf der Warteliste und wird automatisch erstellt, sobald es wieder geht.",
+    phStarterHelp: "Gemini stellt dir etwa 30 häufige Wendungen zusammen: Gespräch beginnen, Meinung sagen, höflich widersprechen, Zeit gewinnen und mehr. Jede kannst du wieder löschen.",
+    phStarter: "Grundstock erstellen", phStarterBusy: "Wird erstellt, das dauert etwas …", phStarterDone: "{n} Wendungen hinzugefügt",
+    phStarterFail: "Gemini antwortet gerade nicht, bitte gleich nochmal versuchen", phStat: "{a} von {t} Wendungen sitzen gut", newPhrases: "Neue Wendungen pro Tag"
   }
 };
 </script>
