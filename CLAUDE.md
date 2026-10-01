@@ -29,3 +29,13 @@ The engine rules in `karteikarten-engine/CLAUDE.md` apply here in full. This fil
 7. Before a PR, run the engine's `npm test` with this checkout next to the engine; the suite reads this app's
    `index.html` and compares the Gemini request against a recorded fingerprint. A change to `rules` changes that
    fingerprint on purpose: say so and update it as described in the engine rules.
+
+## Working method (Superpowers skills)
+
+The folder `.claude/skills/` holds the Superpowers skills (brainstorming, writing-plans, executing-plans,
+test-driven-development, systematic-debugging, verification-before-completion, requesting/receiving-code-review,
+finishing-a-development-branch, subagent-driven-development, and others). At the start of every session, read
+`.claude/skills/using-superpowers/SKILL.md` and follow it: check for a matching skill before any task, brainstorm
+before building a feature, plan before executing, test first for core logic, debug systematically, and verify before
+reporting done. Where a skill and the rules above differ (branching, merging only on request, texts in both apps,
+the fingerprint), the rules above win.
