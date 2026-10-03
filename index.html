@@ -57,7 +57,7 @@ window.APP = {
     old.forEach(function (id, i) { p.cards[id] = { b: 2, due: d.getTime() + (1 + i % 3) * 864e5, t: now, n: 1, w: 0 }; });
   },
   vapid: "BFZuIFPCB6Xfxe7Zh8ldo_6S9V4jIi8IskNE2ptXS6XJiHVb48SpkilWmXUOH3jwDjE9rIsFhXYL3_iy9jeiLz8",
-  fields: ["w", "g", "hint", "perf", "ar", "en", "def", "ex", "note", "fam", "cat"],
+  fields: ["w", "g", "hint", "perf", "ar", "en", "def", "ex", "note", "syn", "forms", "fam", "cat"],
   rules: {
     intro: "Du erstellst eine Lernkarte für einen arabischen Muttersprachler (Deutsch B1 bis B2).",
     w: "w: das deutsche Wort in Grundform, bei Nomen OHNE Artikel. Ist die Eingabe Arabisch oder Englisch, nimm das gebräuchlichste passende deutsche Wort und erstelle die Karte dafür.",
@@ -69,6 +69,8 @@ window.APP = {
     def: "def: einfache deutsche Erklärung in einem Satz, B1-Niveau.",
     ex: "ex: ein natürlicher, grammatisch korrekter Beispielsatz aus dem Alltag oder Beruf, B1-Niveau. Das Zielwort steht in der Form, die der Satz braucht (konjugiert, dekliniert, trennbare Verben getrennt oder mit zu wie \"umzugehen\"), Präpositionen und Reflexivpronomen an ihrem normalen Platz. Markiere jeden Teil davon mit <b>…</b>, immer ganze Wörter.",
     note: "note: nur wenn es eine typische Falle gibt (Verwechslung, Kasus, falscher Freund), sonst leer.",
+    syn: "syn: ein oder zwei gebräuchliche deutsche Synonyme oder sehr nahe Wörter, mit Komma getrennt; leer, wenn es keine gibt.",
+    forms: "forms: die anderen Wortarten derselben Wortfamilie, nur gebräuchliche, höchstens vier (bei einem Nomen das Verb, das Adjektiv und das Adverb, bei einem Verb das Nomen und das Adjektiv, bei einem Adjektiv das Nomen, das Verb und das Adverb, soweit es sie gibt): je w (bei Nomen ohne Artikel), g wie oben, pos (n, v, adj oder adv), ar und en wie oben. Leer, wenn es keine gibt.",
     fam: "fam: das Stammwort der Wortfamilie, klein geschrieben, meist der Infinitiv des Verbs, sonst das Grundwort (z. B. \"empfinden\" für empfindlich, Empfindung und empfinden).\n  Schon vorhandene Wortfamilien: {fams}.\n  Wenn das Wort wirklich zu einer davon gehört, nimm genau diesen Wert. Sonst ein neues Stammwort.\n  Wichtig: Wortfamilie heißt gleicher Wortstamm in der Form (abwesend und Abwesenheit), NICHT ähnliche Bedeutung (abwesend und verlassen sind keine Familie) und NICHT nur gleiche Vorsilbe.",
     cat: "cat: das Thema der Karte auf Deutsch, ein bis drei Wörter.\n  Schon vorhandene Themen: {topics}.\n  Nimm eines davon, wenn es inhaltlich passt. Nur wenn keines passt, erfinde ein neues, eher allgemeines Thema (z. B. \"Arbeit\", \"Gesundheit\", \"Wohnen\").",
     end: "Keine Bindestriche als Gedankenstrich verwenden."
@@ -113,10 +115,11 @@ window.APP = {
     backupH: "Sicherung", export: "Als Datei sichern", import: "Datei laden", imported: "Sicherung geladen", importFail: "Diese Datei passt nicht",
     grpFn: "Funktionen", grpLearn: "Lernen", grpStyle: "Aussehen", grpData: "Daten", dockVert: "Dock senkrecht am rechten Rand",
     meaningL: "Bedeutung zeigen", meaningAr: "Arabisch", meaningEn: "Englisch", meaningBoth: "Arabisch und Englisch",
-    fillEn: "Englische Bedeutungen ergänzen ({n} Karten)", fillEnBusy: "Gemini übersetzt …", fillEnDone: "{n} Karten ergänzt", fillEnFail: "Ergänzen fehlgeschlagen, später nochmal versuchen",
+    fill: "Karten ergänzen: Englisch, Synonyme, Wortformen, Familien zusammenlegen ({n})", fillBusy: "Gemini ergänzt …", fillDone: "{n} Karten ergänzt", fillFail: "Ergänzen fehlgeschlagen, später nochmal versuchen", dockStay: "Dock immer sichtbar",
     optsH: "Lernen", newPerDay: "Neue Wörter pro Tag", arFirst: "Arabisch zuerst zeigen", slow: "Langsamer sprechen", gvoice: "Natürliche Aussprache mit Gemini (jedes Wort wird nur einmal erstellt und auf dem Gerät gespeichert)",
     resetH: "Zurücksetzen", reset: "Fortschritt löschen", resetQ: "Wirklich den ganzen Fortschritt löschen?",
-    addH: "Neues Wort", addPh: "Deutsch, Englisch oder Arabisch", gen: "Karte erstellen", genBusy: "Wird erstellt …", regen: "Neu erstellen",
+    addH: "Neues Wort oder neue Wendung", addPh: "Deutsch, Englisch oder Arabisch", kindW: "Wort", kindP: "Wendung", close: "Schließen",
+    synH: "Synonyme", formsH: "Wortformen", posN: "Nomen", posV: "Verb", posAdj: "Adjektiv", posAdv: "Adverb", gen: "Karte erstellen", genBusy: "Wird erstellt …", regen: "Neu erstellen",
     saveCard: "Zur Liste hinzufügen", saving: "Wird gespeichert …", discard: "Verwerfen",
     needKey: "Für automatische Karten zuerst unter Optionen einen Gemini-API-Key eintragen.",
     needTok: "Zum Speichern wird der GitHub-Token gebraucht (Optionen).", dup: "Dieses Wort ist schon in der Liste.",
